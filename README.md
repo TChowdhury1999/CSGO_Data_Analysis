@@ -1,5 +1,5 @@
 # CSGO_Data_Analysis
-Personal project involving webscraping from csgo-stats.gg and analysing the scraped data
+Personal project involving webscraping from csgo-stats.gg using it to create live round winning probability overlay ingame
 
 
 - match_id_scraper.py creates a list of match IDs for the input profile
