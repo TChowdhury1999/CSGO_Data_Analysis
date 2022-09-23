@@ -80,6 +80,7 @@ def add_round_winner(df):
 def add_pistol_round(main_df):
     """ Adds a column which indicates if a round is a pistol round or not 
         Also adds column indicating if a short/long match is played
+        Also add column indicating which if a team  is on CT side
     """
     
     # first need a column that indicates long/short match
@@ -103,12 +104,21 @@ def add_pistol_round(main_df):
 
     main_df.loc[((main_df["last_round"] == 8) | (main_df["last_round"] == 9)) & (main_df["score_sum"] == 9), "pistol_round"] = 1 
     
+    
+    # now lets add a column for the side
+    # team1 always starts as ct_side and then it switches ofc
+    # for short matches the switch is for round number greater than 8
+    
+    main_df["team1_t_side"] = True
+    main_df.loc[((main_df["last_round"] == 8) | (main_df["last_round"] == 9)) & (main_df["round"] > 8), "team1_t_side"] = False
+    
+    # equivalent for team2 is just boolean opposite but does not need to be saved here
+    
     # can now remove score_sum
     
     del main_df["score_sum"]
     
     return main_df
-    
     
 
 def gen_main_df(no_matches=no_matches, match_id_list=match_id_list):
@@ -157,7 +167,7 @@ def gen_main_df(no_matches=no_matches, match_id_list=match_id_list):
     main_df = add_round_winner(main_df)
     
     # add pistol round indicator column
-    
+    main_df = add_pistol_round(main_df)
     
     # some columns aren't int type 
     # change here
@@ -211,7 +221,7 @@ def win_perc_equip_val(bin_no = 15, pistol=False):
         # add a column indicating if a round is pistol round
         # first need a column indicating if match was short/long match
         
-
+        pass
 
 
 
