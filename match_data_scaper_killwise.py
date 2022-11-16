@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jun 28 14:00:38 2022
+Created on Sun 9 Oct
 
 @author: Tanjim
 
-Scrapes through multiple matches as listed by their match IDs in match_IDs.csv
-and collects data for each round such as round winner, players alive, cash
-spent etc, and saves each match as a dataframe in /match_dfs.
+Similar to match_data_scraper except the rows in the saved dataframes are done
+per kill so that total kill/assist/death data can be captured mid round.
 
 """
 
@@ -29,13 +28,12 @@ extension = "#/rounds"
 # read in match_IDs
 match_IDs = list(pd.read_csv("match_IDs.csv")["0"])
 
-
 # loop through each match ID
 
 for match_ID in match_IDs:
 
     # check if the match has already been scraped
-    if os.path.exists(f"match_dfs/{match_ID}"):
+    if os.path.exists(f"match_dfs_killwise/{match_ID}"):
         pass
     else:
 
@@ -44,30 +42,67 @@ for match_ID in match_IDs:
         # Loads up webdriver and starts selenium session at the target website
 
         # DataFrame columns will be stored below and populated
-        # DataFrame rows are the rounds in a game
+        # DataFrame rows are timestamps in rounds
 
+        time_ = []
         team1_rounds_won = []
-        team1_players_alive = []
-        team1_equipment_value = []
-        team1_cash = []
-        team1_cash_spent = []
-        team1_kill_times = []
-
         team2_rounds_won = []
-        team2_players_alive = []
-        team2_equipment_value = []
-        team2_cash = []
-        team2_cash_spent = []
-        team2_kill_times = []
+
+        # each player has k/d/a/score
+        # this data stored in player df which will be parsed at the end
+        player_df = pd.DataFrame(
+            [
+                [[] for _ in range(10)],
+                [[] for _ in range(10)],
+                [[] for _ in range(10)],
+            ],
+            index=["kills", "deaths", "assists"],
+            columns=[[f"player_{x}" for x in range(1, 11)]],
+        )
 
     # get the html of the page
     page_html = browser.page_source
-
     # close browser
     browser.quit()
-
     # parse the html using bs4
     soup = BeautifulSoup(page_html, "html.parser")
+
+    # start by populating a player_names dict
+    rows = soup.findAll(attrs={"class": "match-player"})
+    name_list = [tag.text.strip() for tag in list(rows)]
+    player_names = {k: v for v, k in enumerate(name_list, start=1)}
+
+    # begin scraping
+    # first lets get a list of the rounds and the round boxes
+
+    round_list = list(soup.findAll(attrs={"class": "round-info-side"}))[1::2]
+
+    for round_ in round_list:
+
+        # loop through the rounds
+
+        # create a kill_list listing all the kills in the round
+        kill_list = []
+        for kill in round_:
+            kill_list.append(kill.text)
+        kill_list = kill_list[1::2][:-1]
+
+        for kill in kill_list:
+            # each component of kill is separated by new line \n
+            kill_comp = kill.split("\n")[1:-1]
+
+            # obtain kill time in s and add to time column
+            kill_time_list = re.findall(r"\d{2}", kill_comp[0])[0:2]
+            kill_time = int(kill_time_list[0]) * 60 + int(kill_time_list[1])
+            time_.append(kill_time)
+
+            # obtain killer and add kill to player df
+            killer_index = player_names[kill_comp[1]]
+            player_df.iat[0, killer_index - 1] = player_df.iat[0, killer_index - 1].append(1)
+
+            # check if assist
+
+            # if assist
 
     # begin with the rolling score
     # search for the class
@@ -214,7 +249,7 @@ for match_ID in match_IDs:
     match_df["team1_kill_times"] = team1_kill_times[: second_pistol_rnd - 1] + temp_
 
     # now save this dataframe with the filename as the match ID
-    match_df.to_pickle(f"match_dfs/{match_ID}")
+    # match_df.to_pickle(f"match_dfs/{match_ID}")
 
     # print msg saying it has been saved and implement a time delay to prevent
     # being banned from the website
