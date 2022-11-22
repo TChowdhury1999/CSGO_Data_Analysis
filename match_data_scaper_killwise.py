@@ -9,10 +9,11 @@ per kill so that total kill/assist/death data can be captured mid round.
 
 """
 
+
+
 import pandas as pd
 import numpy as np
 import os.path
-import selenium
 import re
 import time
 
@@ -60,6 +61,21 @@ for match_ID in match_IDs:
             columns=[[f"player_{x}" for x in range(1, 11)]],
         )
 
+        """
+        Change dataframe format
+        
+        Round|Time|Score|player 1|player 2|player 3 ....|Won round|Won game
+        -------------------------------------
+        1    |12  |2-4  |[k,d,a]| [k,d,a] |[k,d,a] ...  | CT      | T
+             |45  |2-4  |[k,d,a]| [k,d,a] |[k,d,a] ...  | CT      | T
+             
+        2    |23  |3-4  |[k,d,a]| [k,d,a] |[k,d,a] ...  | CT      | T
+        .
+        .
+        .
+        """
+
+
     # get the html of the page
     page_html = browser.page_source
     # close browser
@@ -101,8 +117,16 @@ for match_ID in match_IDs:
             player_df.iat[0, killer_index - 1] = player_df.iat[0, killer_index - 1].append(1)
 
             # check if assist
+            # assists have a plus as third component in the kill tag
 
-            # if assist
+            # if assist, add an assist to player_df
+            if re.search("\+", kill_comp[2]):
+                # there is an assist by player in 4th component
+                # issue is that theres weird white space before the player's name
+                # just remove white space and try match
+                assister_index = player_names[kill_comp[3].lstrip()]
+                player_df.iat[0, killer_index - 1] = player_df.iat[0, killer_index - 1].append(1)
+                
 
     # begin with the rolling score
     # search for the class
