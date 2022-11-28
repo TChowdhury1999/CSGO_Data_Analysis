@@ -1,7 +1,4 @@
 # CSGO_Data_Analysis
-Personal project involving webscraping from csgo-stats.gg using it to create live round winning probability overlay ingame
+Create live round winning probability overlay ingame for CSGO
 
-
-- match_id_scraper.py creates a list of match IDs for the input profile
-- match_data_scraper.py then goes through these matches on csgostats.gg and saves the match data into DFs
-- match_data_analyser.py is used to produce graphs displaying different characteristics and how they affect round win % for example.
+Using data from csgo-stats.gg, a ML model will be trained that can provide a probability of winning a round/game of Counter-Strike Global Offensive. By reading in data from the scoreboard, an overlay can be displayed on screen to players.
