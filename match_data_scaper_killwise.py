@@ -11,7 +11,6 @@ count & the time.
 
 
 import pandas as pd
-import numpy as np
 import os.path
 import re
 import time
@@ -45,7 +44,7 @@ for match_ID in match_IDs:
         """
         Round DataFrame has information that is constant the whole round
         Format:
-            
+
         Round|Team 1 Rounds Won|Team 2 Rounds Won|Team 1 Won Round|Team 2 Won Round|Team 1 Won Game|Team 2 Won Game
         -----------------------------------------------------------------------------------------------------------
         1    |0                |0                |True            |False           |False          |True
@@ -56,15 +55,15 @@ for match_ID in match_IDs:
 
         # Round DataFrame columns
         round_ = []
-        team1_rounds_won = []
-        team2_rounds_won = []
+        team1_rounds_won = [0]
+        team2_rounds_won = [0]
         team1_won_round = []
         team2_won_round = []
         team1_won_game = []
         team2_won_game = []
 
         """
-        Player stats DataFrame contains the k/d/a for each player with the 
+        Player stats DataFrame contains the k/d/a for each player with the
         format:
         
                |Player 1   |Player 2 ... |Player 9   |Player 10             
@@ -133,6 +132,34 @@ for match_ID in match_IDs:
         name_list = [tag.text.strip() for tag in list(rows)]
         player_names = {k: v for v, k in enumerate(name_list, start=1)}
 
+        """ Round DataFrame """
+
+        # get list of score
+        score_list = list(soup.findAll(attrs={"class": "round-score"}))
+
+        # loop through score_list and save the scores
+        # also collect info about who won etc
+
+        for round_ in score_list:
+            team1_score, *_, team2_score = round_.text.strip()
+            team1_won_round.append(team1_score)
+            team2_won_round.append(team2_score)
+            team1_rounds_won.append(team1_rounds_won[-1] + team1_score)
+            team2_rounds_won.append(team2_rounds_won[-1] + team2_score)
+
+        # set winner of game columns
+        # count draw as win
+
+        if team1_score > team2_score:
+            team1_won_game = [1] * len(team1_score)
+            team2_won_game = [0] * len(team2_score)
+        elif team1_score == team2_score:
+            team1_won_game = [1] * len(team1_score)
+            team2_won_game = [1] * len(team2_score)
+        else:
+            team1_won_game = [0] * len(team1_score)
+            team2_won_game = [1] * len(team2_score)
+
         # begin scraping
         # first lets get a list of the rounds and the round boxes
 
@@ -165,7 +192,7 @@ for match_ID in match_IDs:
                 # assists have a plus as third component in the kill tag
 
                 # if assist, add an assist to player_df
-                if re.search("\+", kill_comp[2]):
+                if re.search(r"\+", kill_comp[2]):
                     # there is an assist by player in 4th component
                     # issue is that theres weird white space before the player's name
                     # just remove white space and try match
