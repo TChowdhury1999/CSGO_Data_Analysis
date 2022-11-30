@@ -14,9 +14,13 @@ import pandas as pd
 import os.path
 import re
 import time
+import codecs
 
 from selenium import webdriver
 from bs4 import BeautifulSoup
+
+# read in html example for WIP
+page_html=codecs.open("example_html.html", 'r', 'utf-8')
 
 
 # define the base URL and extension for matches
@@ -160,8 +164,7 @@ for match_ID in match_IDs:
             team1_won_game = [0] * len(team1_score)
             team2_won_game = [1] * len(team2_score)
 
-        # begin scraping
-        # first lets get a list of the rounds and the round boxes
+        # populate player DataFrame
 
         round_list = list(soup.findAll(attrs={"class": "round-info-side"}))[1::2]
 
@@ -196,8 +199,16 @@ for match_ID in match_IDs:
                     # there is an assist by player in 4th component
                     # issue is that theres weird white space before the player's name
                     # just remove white space and try match
+                    # add an assist to the assist column
                     assister_index = player_names[kill_comp[3].lstrip()]
-                    player_df.iat[0, killer_index - 1] = player_df.iat[0, killer_index - 1].append(1)
+                    player_df.iat[1, assister_index - 1] = player_df.iat[1, assister_index - 1].append(1)
+                else:
+                    assister_index = None
+                
+                # the player that died is always the last kill component
+                dead_index = player_names[kill_comp[-1]]
+                player_df.iat[1, assister_index - 1] = player_df.iat[1, assister_index - 1].append(1)
+
 
         # begin with the rolling score
         # search for the class
