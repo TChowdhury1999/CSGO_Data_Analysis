@@ -20,7 +20,7 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 
 # read in html example for WIP
-page_html=codecs.open("example_html.html", 'r', 'utf-8')
+page_html=codecs.open("example_html.html", 'r', 'utf-16')
 
 
 # define the base URL and extension for matches
@@ -188,8 +188,11 @@ for match_ID in match_IDs:
                 time_.append(kill_time)
 
                 # obtain killer and add kill to player df
-                killer_index = player_names[kill_comp[1]]
-                player_df.iat[0, killer_index - 1] = player_df.iat[0, killer_index - 1].append(1)
+                killer_index = player_names[kill_comp[1]] - 1
+                player_df.iat[0, killer_index] = player_df.iat[0, killer_index].append(1)
+                # add a 0 to the kill list of all the other players
+                remaining_indices = list(range(1,11))
+                #del remaining_indices[killer_index]
 
                 # check if assist
                 # assists have a plus as third component in the kill tag
@@ -200,14 +203,16 @@ for match_ID in match_IDs:
                     # issue is that theres weird white space before the player's name
                     # just remove white space and try match
                     # add an assist to the assist column
-                    assister_index = player_names[kill_comp[3].lstrip()]
-                    player_df.iat[1, assister_index - 1] = player_df.iat[1, assister_index - 1].append(1)
+                    assister_index = player_names[kill_comp[3].lstrip()] - 1
+                    player_df.iat[1, assister_index] = player_df.iat[1, assister_index].append(1)
                 else:
                     assister_index = None
                 
                 # the player that died is always the last kill component
-                dead_index = player_names[kill_comp[-1]]
-                player_df.iat[1, assister_index - 1] = player_df.iat[1, assister_index - 1].append(1)
+                dead_index = player_names[kill_comp[-1]] - 1
+                player_df.iat[1, assister_index] = player_df.iat[1, assister_index].append(1)
+                
+                
 
 
         # begin with the rolling score
@@ -293,20 +298,6 @@ for match_ID in match_IDs:
 
         # now that columns are complete, compile into a DF
 
-        column_names = [
-            "team1_rounds_won",
-            "team2_rounds_won",
-            "team1_players_alive",
-            "team2_players_alive",
-            "team1_cash",
-            "team2_cash",
-            "team1_cash_spent",
-            "team2_cash_spent",
-            "team1_equipment_value",
-            "team2_equipment_value",
-            "team1_kill_times",
-            "team2_kill_times",
-        ]
         # now fix timings
 
         # =============================================================================
