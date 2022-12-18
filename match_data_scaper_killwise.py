@@ -154,24 +154,35 @@ for match_ID in match_IDs:
         team2_won_round = np.diff(team2_rounds_won)
 
         # set winner of game columns
-        # count draw as win
+        # count draw as separate outcome 2 so can be used fixed later
 
         team1_final_score = team1_rounds_won.pop()
         team2_final_score = team2_rounds_won.pop()
+        
+        game_length = len(team1_won_round)
+        round_ = np.arange(1, game_length+1)
 
         if team1_final_score > team2_final_score:
-            team1_won_game = [1] * len(team1_won_round)
-            team2_won_game = [0] * len(team1_won_round)
+            team1_won_game = [1] * game_length
+            team2_won_game = [0] * game_length
         elif team1_final_score == team2_final_score:
-            team1_won_game = [1] * len(team1_won_round)
-            team2_won_game = [1] * len(team1_won_round)
+            team1_won_game = [2] * game_length
+            team2_won_game = [2] * game_length
         else:
-            team1_won_game = [0] * len(team1_won_round)
-            team2_won_game = [1] * len(team1_won_round)
+            team1_won_game = [0] * game_length
+            team2_won_game = [1] * game_length
+            
+        # collect into a DataFrame just for ease of access
+        round_df = pd.DataFrame(data=np.column_stack([round_, team1_rounds_won, team2_rounds_won, team1_won_round,
+                                                      team2_won_round, team1_won_game, team2_won_game]),
+                                columns=["round", "team1_rounds_won", "team2_rounds_won", "team1_won_round", "team2_won_round",
+                                         "team1_won_game", "team2_won_game"])
 
-        # populate player DataFrame
+        """ Player DataFrame"""
 
         round_list = list(soup.findAll(attrs={"class": "round-info-side"}))[1::2]
+        
+        round_number = 1
 
         for round_ in round_list:
 
@@ -188,18 +199,22 @@ for match_ID in match_IDs:
                 kill_comp = kill.split("\n")[1:-1]
 
                 # obtain kill time in s and add to time column
+                # store time as round number and time in round
                 kill_time_list = re.findall(r"\d{2}", kill_comp[0])[0:2]
                 kill_time = int(kill_time_list[0]) * 60 + int(kill_time_list[1])
-                time_.append(kill_time)
+                time_.append((round_number, kill_time))
 
                 # obtain killer and add kill to player df
-                killer_index = player_names[kill_comp[1]] - 1
-                player_df.iat[0, killer_index] = player_df.iat[0, killer_index].append(1)
+                # kill_comp[1] is the killer name
+                # but if there is an assist kill_comp[1] has a space after
+                # use strip to remove this whitespace
+                killer_index = player_names[kill_comp[1].strip()] - 1
+                player_df.iat[0, killer_index].append(1)
                 # add a 0 to the kill list of all the other players
                 remaining_indices = list(range(0,10))
                 del remaining_indices[killer_index]
                 for player_index in remaining_indices:
-                    player_df.iat[0, player_index] = player_df.iat[0, player_index].append(0)
+                    player_df.iat[0, player_index].append(0)
                 
                 # check if assist
                 # assists have a plus as third component in the kill tag
@@ -213,133 +228,41 @@ for match_ID in match_IDs:
                     # just remove white space and try match
                     # add an assist to the assist column
                     assister_index = player_names[kill_comp[3].lstrip()] - 1
-                    player_df.iat[1, assister_index] = player_df.iat[1, assister_index].append(1)
+                    player_df.iat[2, assister_index].append(1)
                     
                     # add a 0 to the assist list of all the other players
                     remaining_indices = list(range(0,10))
                     del remaining_indices[assister_index]
                     for player_index in remaining_indices:
-                        player_df.iat[1, player_index] = player_df.iat[1, player_index].append(0)
+                        player_df.iat[2, player_index].append(0)
 
                 else:
                     # there were no assists for this kill so add a 0 to 
                     # assist list
                     player_indices = list(range(0,10))
                     for player_index in player_indices:
-                        player_df.iat[1, player_index] = player_df.iat[1, player_index].append(0)
+                        player_df.iat[2, player_index].append(0)
                         
                         
                 # the player that died is always the last kill component
                 dead_index = player_names[kill_comp[-1]] - 1
-                player_df.iat[1, assister_index] = player_df.iat[1, assister_index].append(1)
+                player_df.iat[1, dead_index].append(1)
                 
                 # add a 0 to the death list of the rest of the players
                 remaining_indices = list(range(0,10))
                 del remaining_indices[dead_index]
                 for player_index in remaining_indices:
-                    player_df.iat[2, player_index] = player_df.iat[2, player_index].append(0)                
-                
-
-
-        # begin with the rolling score
-        # search for the class
-        rows = soup.findAll(attrs={"class": "round-score"})
-        row_list = list(rows)
-
-        for row in row_list:
-
-            # get the numbers (score) from the text of the row (and conv str to int)
-            score = [int(i) for i in row.text if i.isdigit()]
-            team1_rounds_won.append(score[0])
-            team2_rounds_won.append(score[1])
-
-        # now players alive
-        rows = soup.findAll(attrs={"class": "round-outer"})
-        row_list = list(rows)
-
-        for row in row_list:
-
-            # list with elements indicating if a player survived or not
-            indicators = list(row.find_all(class_="player-indicator"))
-            # convert these tags to strings for easier differentiating
-            indicators = [str(tag) for tag in indicators]
-
-            # count how many players survived for both teams
-
-        # now equipment val, cash and cash spent
-        # as well as time of kill
-
-        rows = soup.findAll(attrs={"class": "round-info-side"})
-        row_list = list(rows)
-
-        for row in row_list[::2]:
-            # only get the left side of the info page
-            # ie the part that stores monetary values
-
-            monetary_vals = re.findall(r"\d+", row.text)
-            # conv strs to ints
-            monetary_vals = [int(i) for i in monetary_vals]
-
-        for _round in row_list[1::2]:
-            # only get right hand side now
-            # this has kill times, guns used and player names but only use times for
-            # now
-            # assume team1 is t side for whole game, afterwards calc half way point
-            # and swap the times after that point
-
-            # store each rounds kill times in these lists
-            t_side = []
-            ct_side = []
-
-            # each kill in this round has a tag containing the team and the time
-            kill_tags = _round.findAll(attrs={"class": "tl-inner"})
-
-            for kill in range(len(kill_tags)):
-                # loop through each kill and obtain kill time
-
-                # in the kill tag, the time is text on 2nd line in format XX:XX
-                kill_time_str = list(kill_tags[kill])[1].text
-                kill_time_lst = re.findall(r"\d{2}", kill_time_str)
-                kill_time_lst = [int(i) for i in kill_time_lst]
-
-                # time is 60*minutes + secs
-                kill_time = kill_time_lst[0] * 60 + kill_time_lst[1]
-
-                # now find the team to add the kill to
-
-                if not re.findall(r"team-ct", str(list(kill_tags[kill])[3])):
-                    # lot going on here
-                    # in the kill tag, the third line contains either team-ct or team-t
-                    # try to find this part of the string and store in list.
-                    # if the list is empty, this boolean returns true, so true = team T
-
-                    # team-T got kill if we get here
-                    t_side.append(kill_time)
-                else:
-                    # team-CT got kill if we get here
-                    ct_side.append(kill_time)
-
-            # once all kills in round are done, add the lists to their corresponding
-            # DF colmns
-
-        # now that columns are complete, compile into a DF
-
-        # now fix timings
-
-        # =============================================================================
-        #         second_pistol_rnd = max([team1_rounds_won[-1], team2_rounds_won[-1]])
-        #         # the first round of second half is equal to 9 or 16 for short/long matches
-        #         # these vals are same as winning amount of rounds for those matches
-        #
-        #         # store 2nd half kills of team2 (acc team1s times) in temp file
-        #         temp_ = team2_kill_times[second_pistol_rnd - 1 :]
-        #         # change 2nd half kills of team2 to correct time
-        #         match_df["team2_kill_times"] = (
-        #             team2_kill_times[: second_pistol_rnd - 1] + team1_kill_times[second_pistol_rnd - 1 :]
-        #         )
-        #         match_df["team1_kill_times"] = team1_kill_times[: second_pistol_rnd - 1] + temp_
-        # =============================================================================
-
+                    player_df.iat[1, player_index].append(0)        
+            
+            # increase round number that is used in timestamps
+            round_number+=1 
+        
+        """ Final DataFrame """
+        
+        # compile all the dataframes into the format shown above
+        
+        
+        
         # now save this dataframe with the filename as the match ID
         # match_df.to_pickle(f"match_dfs/{match_ID}")
 
