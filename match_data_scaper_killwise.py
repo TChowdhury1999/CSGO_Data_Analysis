@@ -21,7 +21,7 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 
 # read in html example for WIP
-page_html=codecs.open("example_html.html", 'r', 'utf-16')
+page_html = codecs.open("example_html.html", "r", "utf-16")
 
 
 # define the base URL and extension for matches
@@ -160,9 +160,9 @@ for match_ID in match_IDs:
 
         team1_final_score = team1_rounds_won.pop()
         team2_final_score = team2_rounds_won.pop()
-        
+
         game_length = len(team1_won_round)
-        round_ = np.arange(1, game_length+1)
+        round_ = np.arange(1, game_length + 1)
 
         if team1_final_score > team2_final_score:
             team1_won_game = [1] * game_length
@@ -173,17 +173,35 @@ for match_ID in match_IDs:
         else:
             team1_won_game = [0] * game_length
             team2_won_game = [1] * game_length
-            
+
         # collect into a DataFrame just for ease of access
-        round_df = pd.DataFrame(data=np.column_stack([round_, team1_rounds_won, team2_rounds_won, team1_won_round,
-                                                      team2_won_round, team1_won_game, team2_won_game]),
-                                columns=["round", "team1_rounds_won", "team2_rounds_won", "team1_won_round", "team2_won_round",
-                                         "team1_won_game", "team2_won_game"])
+        round_df = pd.DataFrame(
+            data=np.column_stack(
+                [
+                    round_,
+                    team1_rounds_won,
+                    team2_rounds_won,
+                    team1_won_round,
+                    team2_won_round,
+                    team1_won_game,
+                    team2_won_game,
+                ]
+            ),
+            columns=[
+                "round",
+                "team1_rounds_won",
+                "team2_rounds_won",
+                "team1_won_round",
+                "team2_won_round",
+                "team1_won_game",
+                "team2_won_game",
+            ],
+        )
 
         """ Player DataFrame"""
 
         round_list = list(soup.findAll(attrs={"class": "round-info-side"}))[1::2]
-        
+
         round_number = 1
 
         for round_ in round_list:
@@ -213,15 +231,15 @@ for match_ID in match_IDs:
                 killer_index = player_names[kill_comp[1].strip()] - 1
                 player_df.iat[0, killer_index].append(1)
                 # add a 0 to the kill list of all the other players
-                remaining_indices = list(range(0,10))
+                remaining_indices = list(range(0, 10))
                 del remaining_indices[killer_index]
                 for player_index in remaining_indices:
                     player_df.iat[0, player_index].append(0)
-                
+
                 # check if assist
                 # assists have a plus as third component in the kill tag
-                
-                # before 
+
+                # before
 
                 # if assist, add an assist to player_df
                 if re.search(r"\+", kill_comp[2]):
@@ -231,54 +249,55 @@ for match_ID in match_IDs:
                     # add an assist to the assist column
                     assister_index = player_names[kill_comp[3].lstrip()] - 1
                     player_df.iat[2, assister_index].append(1)
-                    
+
                     # add a 0 to the assist list of all the other players
-                    remaining_indices = list(range(0,10))
+                    remaining_indices = list(range(0, 10))
                     del remaining_indices[assister_index]
                     for player_index in remaining_indices:
                         player_df.iat[2, player_index].append(0)
 
                 else:
-                    # there were no assists for this kill so add a 0 to 
+                    # there were no assists for this kill so add a 0 to
                     # assist list
-                    player_indices = list(range(0,10))
+                    player_indices = list(range(0, 10))
                     for player_index in player_indices:
                         player_df.iat[2, player_index].append(0)
-                        
-                        
+
                 # the player that died is always the last kill component
                 dead_index = player_names[kill_comp[-1]] - 1
                 player_df.iat[1, dead_index].append(1)
-                
+
                 # add a 0 to the death list of the rest of the players
-                remaining_indices = list(range(0,10))
+                remaining_indices = list(range(0, 10))
                 del remaining_indices[dead_index]
                 for player_index in remaining_indices:
-                    player_df.iat[1, player_index].append(0)        
-            
+                    player_df.iat[1, player_index].append(0)
+
             # increase round number that is used in timestamps
-            round_number+=1 
-        
+            round_number += 1
+
         """ Final DataFrame """
-        
+
         # compile all the dataframes into the format shown above
-        
+
         # begin forming columns of final dataframe with round and time
         final_df = pd.DataFrame(time_, columns=["Round", "Time"])
-        
+
         # add score
         round_df.set_index("round", inplace=True)
         final_df["team1_score"] = round_df.team1_rounds_won[final_df.Round].reset_index(drop=True)
         final_df["team2_score"] = round_df.team2_rounds_won[final_df.Round].reset_index(drop=True)
-        
+
         # convert player_df from timestamp events to cummulative sum lists
-        cumsum_df = player_df.applymap(lambda x:np.cumsum(x))
-        
+        cumsum_df = player_df.applymap(lambda x: np.cumsum(x))
+
         for p_no in range(1, 11):
-            final_df[f"player{p_no}"] = list(zip(cumsum_df.iloc[0,p_no-1], cumsum_df.iloc[1,p_no-1], cumsum_df.iloc[2,p_no-1]))
-        
+            final_df[f"player{p_no}"] = list(
+                zip(cumsum_df.iloc[0, p_no - 1], cumsum_df.iloc[1, p_no - 1], cumsum_df.iloc[2, p_no - 1])
+            )
+
         # ADD ALIVE FLAG TO CUMSUM_DF (USING PLAYER_DF) AND THEN ADD IT TO FINAL AS 4TH ELEMENT IN LIST
-        
+
         # now save this dataframe with the filename as the match ID
         # match_df.to_pickle(f"match_dfs/{match_ID}")
 
