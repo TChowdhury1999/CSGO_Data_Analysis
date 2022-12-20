@@ -72,8 +72,8 @@ for match_ID in match_IDs:
         format:
         
                |Player 1   |Player 2 ... |Player 9   |Player 10             
-        Kills  |[0,0,1,...]|[0,1,0,...]  |[0,0,0,...]|[0,0,0,...]
-        Deaths |[0,0,0,...]|[0,0,0,...]  |[0,1,0,...]|[0,0,1,...]
+        Kills  |[0,0,1,...]|[0,1,1,...]  |[0,0,0,...]|[0,0,0,...]
+        Deaths |[0,0,0,...]|[0,0,0,...]  |[0,1,1,...]|[0,0,1,...]
         Assists|[0,0,0,...]|[0,0,1,...]  |[0,0,0,...]|[0,0,0,...]
         
         where each list contains a value for each timestamp
@@ -105,6 +105,8 @@ for match_ID in match_IDs:
         .
         .
         -------------------------------------------------------------------
+        
+        For each player there is also a "living" flag
         
         """
 
@@ -261,7 +263,21 @@ for match_ID in match_IDs:
         
         # compile all the dataframes into the format shown above
         
+        # begin forming columns of final dataframe with round and time
+        final_df = pd.DataFrame(time_, columns=["Round", "Time"])
         
+        # add score
+        round_df.set_index("round", inplace=True)
+        final_df["team1_score"] = round_df.team1_rounds_won[final_df.Round].reset_index(drop=True)
+        final_df["team2_score"] = round_df.team2_rounds_won[final_df.Round].reset_index(drop=True)
+        
+        # convert player_df from timestamp events to cummulative sum lists
+        cumsum_df = player_df.applymap(lambda x:np.cumsum(x))
+        
+        for p_no in range(1, 11):
+            final_df[f"player{p_no}"] = list(zip(cumsum_df.iloc[0,p_no-1], cumsum_df.iloc[1,p_no-1], cumsum_df.iloc[2,p_no-1]))
+        
+        # ADD ALIVE FLAG TO CUMSUM_DF (USING PLAYER_DF) AND THEN ADD IT TO FINAL AS 4TH ELEMENT IN LIST
         
         # now save this dataframe with the filename as the match ID
         # match_df.to_pickle(f"match_dfs/{match_ID}")
