@@ -84,8 +84,9 @@ for match_ID in match_IDs:
                 [[] for _ in range(10)],
                 [[] for _ in range(10)],
                 [[] for _ in range(10)],
+                [[] for _ in range(10)],
             ],
-            index=["kills", "deaths", "assists"],
+            index=["kills", "deaths", "assists", "alive"],
             columns=[[f"player_{x}" for x in range(1, 11)]],
         )
 
@@ -290,13 +291,23 @@ for match_ID in match_IDs:
 
         # convert player_df from timestamp events to cummulative sum lists
         cumsum_df = player_df.applymap(lambda x: np.cumsum(x))
-
+        
+        # ADD ALIVE FLAG TO CUMSUM_DF (USING PLAYER_DF) AND THEN ADD IT TO FINAL AS 4TH ELEMENT IN LIST
+        
+        new_round = final_df.Round.diff()
+        split_points = list(new_round[new_round == 1].index)
+        for p_no in range(1,11):
+            p_death_list = player_df.iloc[1,p_no]
+            p_death_list_split = [p_death_list[i:j] for i, j in zip([0] + split_points, split_points + [None])]
+            #BITWISE FLIP THIS THEN PUT INTO CUMSUM
+            np.concatenate([np.cumsum(i) for i in p_death_list_split])
+            
+        
         for p_no in range(1, 11):
             final_df[f"player{p_no}"] = list(
                 zip(cumsum_df.iloc[0, p_no - 1], cumsum_df.iloc[1, p_no - 1], cumsum_df.iloc[2, p_no - 1])
             )
 
-        # ADD ALIVE FLAG TO CUMSUM_DF (USING PLAYER_DF) AND THEN ADD IT TO FINAL AS 4TH ELEMENT IN LIST
 
         # now save this dataframe with the filename as the match ID
         # match_df.to_pickle(f"match_dfs/{match_ID}")
@@ -305,3 +316,4 @@ for match_ID in match_IDs:
         # being banned from the website
         print(f"Saved Match {match_ID}")
         time.sleep(10)
+
