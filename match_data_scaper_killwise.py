@@ -297,23 +297,27 @@ for match_ID in match_IDs:
         new_round = final_df.Round.diff()
         split_points = list(new_round[new_round == 1].index)
         for p_no in range(1,11):
-            p_death_list = player_df.iloc[1,p_no]
+            p_death_list = player_df.iloc[1,p_no-1]
             p_death_list_split = [p_death_list[i:j] for i, j in zip([0] + split_points, split_points + [None])]
             #BITWISE FLIP THIS THEN PUT INTO CUMSUM
-            np.concatenate([np.cumsum(i) for i in p_death_list_split])
+            cumsum_df.iloc[3,p_no-1] = 1-np.concatenate([np.cumsum(i) for i in p_death_list_split])
             
-        
+        # add player alive flag, kills, assists and deaths
         for p_no in range(1, 11):
-            final_df[f"player{p_no}"] = list(
-                zip(cumsum_df.iloc[0, p_no - 1], cumsum_df.iloc[1, p_no - 1], cumsum_df.iloc[2, p_no - 1])
-            )
+            final_df[f"player{p_no}_alive"] = list( cumsum_df.iloc[3, p_no - 1] )
+            final_df[f"player{p_no}_kills"] = list( cumsum_df.iloc[0, p_no - 1] )
+            final_df[f"player{p_no}_assists"] = list( cumsum_df.iloc[2, p_no - 1] )
+            final_df[f"player{p_no}_deaths"] = list( cumsum_df.iloc[1, p_no - 1] )
 
-
+        
+        # add won round/won game flag (only for team1 to save space)
+        final_df["team1_won_round"] = round_df.team1_won_round[final_df.Round].reset_index(drop=True)
+        final_df["team1_won_game"] = round_df.team1_won_game[final_df.Round].reset_index(drop=True)
+        
         # now save this dataframe with the filename as the match ID
-        # match_df.to_pickle(f"match_dfs/{match_ID}")
+        final_df.to_pickle(f"match_dfs/{match_ID}")
 
-        # print msg saying it has been saved and implement a time delay to prevent
+        # print msg saying it has been saved and implement a time delay to prevent\
         # being banned from the website
         print(f"Saved Match {match_ID}")
         time.sleep(10)
-
