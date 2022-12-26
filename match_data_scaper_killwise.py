@@ -38,7 +38,7 @@ for match_ID in match_IDs:
 
     # check if the match has already been scraped and if so pass to next match
     # in the match list
-    if os.path.exists(f"match_dfs_killwise/{match_ID}"):
+    if os.path.exists(f"match_dfs/{match_ID}.pickle"):
         pass
 
     # otherwise scrape the match for data
@@ -265,7 +265,7 @@ for match_ID in match_IDs:
                         player_df.iat[2, player_index].append(0)
 
                 # the player that died is always the last kill component
-                dead_index = player_names[kill_comp[-1]] - 1
+                dead_index = player_names[kill_comp[-1].strip()] - 1
                 player_df.iat[1, dead_index].append(1)
 
                 # add a 0 to the death list of the rest of the players
@@ -315,7 +315,7 @@ for match_ID in match_IDs:
         final_df["team1_won_game"] = round_df.team1_won_game[final_df.Round].reset_index(drop=True)
         
         # now save this dataframe with the filename as the match ID
-        final_df.to_pickle(f"match_dfs/{match_ID}")
+        final_df.to_pickle(f"match_dfs/{match_ID}.pickle")
 
         # print msg saying it has been saved and implement a time delay to prevent\
         # being banned from the website
