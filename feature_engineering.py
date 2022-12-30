@@ -140,5 +140,23 @@ for metric in ["k","d","a"]:
 
 
 # add a pistol round marker
+features_df["pistol_round"] = [1 if ((i == 1) or (i == 9)) else 0 for i in features_df.Round]
 
 # add a consecutive round win/loss since pistol counter
+
+def consecutive_binary_counter(series):
+    
+    # returns a series where each row has the consecutive number of 1s previously since the last 0 in the input series
+    # so [1,0,0,1,1,1,0,1,1] outputs [0,1,0,0,1,2,3,0,1]
+    
+    return series.groupby(series.ne(series.shift()).cumsum()).cumsum().shift().fillna(0).astype(int)
+    
+    
+working_round_df = features_df.groupby(['match_ID', 'Round']).min()[['team1_won_round', 'team2_won_round', 'pistol_round']].reset_index(drop=False)
+
+# we want to apply the consecutive_binary_counter function to sections of 
+# "team1_won_round" separated by the presence of a pistol round (that way the 
+# counter doesn't go across halves/games). Do this by cumsumming pistol round
+# flag and then groupby by this new column and using:
+# df.groupby('A')['B'].transform('func')
+
