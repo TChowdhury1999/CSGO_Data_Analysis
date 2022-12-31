@@ -90,7 +90,7 @@ for player_number in range(1, 11):
 
 # now add the stats (min/mean/max) for all/alive players for each team
 
-for metric in ["k","d","a"]:
+for metric in ["k", "d", "a"]:
     for round_ind in ["", "w_"]:
         # all players for each team
         # team1
@@ -113,30 +113,42 @@ for metric in ["k","d","a"]:
         features_df[f"team2_max_{metric}_per_{round_ind}r_of_total_p"] = working_df[
             [f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(6, 11)]
         ].max(axis=1)
-        
+
         # alive players for each team
-        # logic for alive players is to just multiply 
+        # logic for alive players is to just multiply
         # team 1
-        features_df[f"team1_min_{metric}_per_{round_ind}r_of_alive_p"] = working_df[
-            [f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(1, 6)]
-        ].multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(1, 6)]])).min(axis=1)
-        features_df[f"team1_mean_{metric}_per_{round_ind}r_of_alive_p"] = working_df[
-            [f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(1, 6)]
-        ].multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(1, 6)]])).mean(axis=1)
-        features_df[f"team1_max_{metric}_per_{round_ind}r_of_alive_p"] = working_df[
-            [f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(1, 6)]
-        ].multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(1, 6)]])).max(axis=1)
-        
+        features_df[f"team1_min_{metric}_per_{round_ind}r_of_alive_p"] = (
+            working_df[[f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(1, 6)]]
+            .multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(1, 6)]]))
+            .min(axis=1)
+        )
+        features_df[f"team1_mean_{metric}_per_{round_ind}r_of_alive_p"] = (
+            working_df[[f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(1, 6)]]
+            .multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(1, 6)]]))
+            .mean(axis=1)
+        )
+        features_df[f"team1_max_{metric}_per_{round_ind}r_of_alive_p"] = (
+            working_df[[f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(1, 6)]]
+            .multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(1, 6)]]))
+            .max(axis=1)
+        )
+
         # team 2
-        features_df[f"team1_min_{metric}_per_{round_ind}r_of_alive_p"] = working_df[
-            [f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(6, 11)]
-        ].multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(6, 11)]])).min(axis=1)
-        features_df[f"team1_mean_{metric}_per_{round_ind}r_of_alive_p"] = working_df[
-            [f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(6, 11)]
-        ].multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(6, 11)]])).mean(axis=1)
-        features_df[f"team1_max_{metric}_per_{round_ind}r_of_alive_p"] = working_df[
-            [f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(6, 11)]
-        ].multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(6, 11)]])).max(axis=1)
+        features_df[f"team1_min_{metric}_per_{round_ind}r_of_alive_p"] = (
+            working_df[[f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(6, 11)]]
+            .multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(6, 11)]]))
+            .min(axis=1)
+        )
+        features_df[f"team1_mean_{metric}_per_{round_ind}r_of_alive_p"] = (
+            working_df[[f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(6, 11)]]
+            .multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(6, 11)]]))
+            .mean(axis=1)
+        )
+        features_df[f"team1_max_{metric}_per_{round_ind}r_of_alive_p"] = (
+            working_df[[f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(6, 11)]]
+            .multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(6, 11)]]))
+            .max(axis=1)
+        )
 
 
 # add a pistol round marker
@@ -144,19 +156,41 @@ features_df["pistol_round"] = [1 if ((i == 1) or (i == 9)) else 0 for i in featu
 
 # add a consecutive round win/loss since pistol counter
 
+
 def consecutive_binary_counter(series):
-    
+
     # returns a series where each row has the consecutive number of 1s previously since the last 0 in the input series
     # so [1,0,0,1,1,1,0,1,1] outputs [0,1,0,0,1,2,3,0,1]
-    
-    return series.groupby(series.ne(series.shift()).cumsum()).cumsum().shift().fillna(0).astype(int)
-    
-    
-working_round_df = features_df.groupby(['match_ID', 'Round']).min()[['team1_won_round', 'team2_won_round', 'pistol_round']].reset_index(drop=False)
 
-# we want to apply the consecutive_binary_counter function to sections of 
-# "team1_won_round" separated by the presence of a pistol round (that way the 
+    return series.groupby(series.ne(series.shift()).cumsum()).cumsum().shift().fillna(0).astype(int)
+
+
+# create a working dataframe that is grouped by rounds of each match
+working_round_df = (
+    features_df.groupby(["match_ID", "Round"])
+    .min()[["team1_won_round", "team2_won_round", "pistol_round"]]
+    .reset_index(drop=False)
+)
+
+# we want to apply the consecutive_binary_counter function to sections of
+# "team1_won_round" separated by the presence of a pistol round (that way the
 # counter doesn't go across halves/games). Do this by cumsumming pistol round
 # flag and then groupby by this new column and using:
 # df.groupby('A')['B'].transform('func')
 
+working_round_df["cumsum_pistol"] = working_round_df.pistol_round.cumsum()
+
+for team_no in range(1, 3):
+    working_round_df[f"team{team_no}_consec_wins"] = working_round_df.groupby("cumsum_pistol")[
+        f"team{team_no}_won_round"
+    ].apply(consecutive_binary_counter)
+
+# now join the consec wins columns to the feature df by joining on match ID and
+# round
+
+features_df = pd.merge(
+    features_df,
+    working_round_df[["match_ID", "Round", "team1_consec_wins", "team2_consec_wins"]],
+    on=["match_ID", "Round"],
+    how="left",
+)
