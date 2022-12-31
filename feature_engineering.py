@@ -194,3 +194,6 @@ features_df = pd.merge(
     on=["match_ID", "Round"],
     how="left",
 )
+
+# save the final dataframe
+features_df.to_pickle("features_dfs/features_df.pkl")
