@@ -55,5 +55,5 @@ X_pca_95 = pca_all.transform(X_scaled)
 # create new dataframe with PCA components and target column
 # add target column
 reduced_arr = np.c_[X_pca_95, Y]
-reduced_df = pd.DataFrame(reduced_arr)
+reduced_df = pd.DataFrame(reduced_arr, columns=[f"PCA_{i}" for i in range(1, X_pca_95.shape[1]+1)]+['Target'])
 reduced_df.to_pickle("features_dfs/reduced_df.pkl")
