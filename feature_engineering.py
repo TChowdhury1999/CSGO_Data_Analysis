@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Dec 26 13:52:18 2022
-
-@author: Tanjim
-"""
-
-# -*- coding: utf-8 -*-
-"""
 Created on Mon 26 Dec 2022
 Author: Tanjim Chowdhury
 
@@ -134,17 +127,17 @@ for metric in ["k", "d", "a"]:
         )
 
         # team 2
-        features_df[f"team1_min_{metric}_per_{round_ind}r_of_alive_p"] = (
+        features_df[f"team2_min_{metric}_per_{round_ind}r_of_alive_p"] = (
             working_df[[f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(6, 11)]]
             .multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(6, 11)]]))
             .min(axis=1)
         )
-        features_df[f"team1_mean_{metric}_per_{round_ind}r_of_alive_p"] = (
+        features_df[f"team2_mean_{metric}_per_{round_ind}r_of_alive_p"] = (
             working_df[[f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(6, 11)]]
             .multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(6, 11)]]))
             .mean(axis=1)
         )
-        features_df[f"team1_max_{metric}_per_{round_ind}r_of_alive_p"] = (
+        features_df[f"team2_max_{metric}_per_{round_ind}r_of_alive_p"] = (
             working_df[[f"player{player_number}_{metric}_per_{round_ind}round" for player_number in range(6, 11)]]
             .multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(6, 11)]]))
             .max(axis=1)
