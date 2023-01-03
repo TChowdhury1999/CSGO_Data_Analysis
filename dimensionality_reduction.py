@@ -11,6 +11,7 @@ PCA to reduce dimensions
 
 import pandas as pd
 import numpy as np
+import pickle
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -56,4 +57,8 @@ X_pca_95 = pca_all.transform(X_scaled)
 # add target column
 reduced_arr = np.c_[X_pca_95, Y]
 reduced_df = pd.DataFrame(reduced_arr, columns=[f"PCA_{i}" for i in range(1, X_pca_95.shape[1]+1)]+['Target'])
+
+# save dataframe, scaler and PCA model
 reduced_df.to_pickle("features_dfs/reduced_df.pkl")
+pickle.dump(scaler, open('ML_models/scaler.sav', 'wb'))
+pickle.dump(PCA, open('ML_models/PCA.sav', 'wb'))
