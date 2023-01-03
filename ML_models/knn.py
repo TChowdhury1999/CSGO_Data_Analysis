@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Jan  1 15:57:57 2023
+Created on Tue Jan  3 19:19:03 2023
 
-Author: Tanjim Chowdhury
+@author: Tanjim
 
-Train & test logistic regression ML model
-
+Train and test k-nearest neighbours machine learning model
 """
+
 
 import pandas as pd
 import git
 import pickle
 from ML_functions import buildROC
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn import metrics
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.model_selection import GridSearchCV
@@ -27,19 +27,18 @@ data = pd.read_pickle(repo.working_tree_dir + "/features_dfs/reduced_df.pkl")
 # Split the data set into training and test splits (90/10 split used)
 x_train, x_test, y_train, y_test = train_test_split(data.drop('Target', axis=1), data.Target, test_size=0.10, random_state=0)
 
-
-# Make an instance of Logistic Regression model and
+# Make an instance of KNN model and
 # define parameters
-logisticRegr = LogisticRegression()
-solvers = ['newton-cg', 'lbfgs', 'liblinear', 'sag']
-penalty = ['l2']
-c_values = [100, 10, 1.0, 0.1, 0.01]
+kNearest = KNeighborsClassifier()
+n_neighbors = range(1, 21, 2)
+weights = ['uniform', 'distance']
+metric = ['euclidean', 'manhattan', 'minkowski']
 
 
 # define grid search
-grid = dict(solver=solvers,penalty=penalty,C=c_values)
+grid = dict(n_neighbors=n_neighbors,weights=weights,metric=metric)
 cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
-grid_search = GridSearchCV(estimator=logisticRegr, param_grid=grid, n_jobs=-1, cv=cv, scoring='accuracy',error_score=0)
+grid_search = GridSearchCV(estimator=kNearest, param_grid=grid, n_jobs=-1, cv=cv, scoring='accuracy',error_score=0,verbose=10)
 grid_result = grid_search.fit(x_train, y_train)
 
 # summarize results
@@ -51,16 +50,16 @@ for mean, stdev, param in zip(means, stds, params):
     print("%f (%f) with: %r" % (mean, stdev, param))
     
 # best results were
-# Best: 0.773150 using {'C': 0.01, 'penalty': 'l2', 'solver': 'liblinear'}
+# Best: 0.773150 using {'metric': 'manhattan', 'n_neighbors': 1, 'weights': 'uniform'}
 
 # now train model with best params
-logisticRegr = LogisticRegression(**grid_result.best_params_)
-logisticRegr.fit(x_test, y_test)
+kNearest = KNeighborsClassifier(**grid_result.best_params_)
+kNearest.fit(x_train, y_train)
 
-predictions = logisticRegr.predict(x_test)
-y_prob = logisticRegr.predict_proba(x_test)
+predictions = kNearest.predict(x_test)
+y_prob = kNearest.predict_proba(x_test)
 
-score = logisticRegr.score(x_test, y_test)
+score = kNearest.score(x_test, y_test)
 print(score)
 cm = metrics.confusion_matrix(y_test, predictions)
 print(cm)
@@ -70,9 +69,9 @@ print(cm)
 buildROC(y_test, y_pred = y_prob[:,1])
 
 # for reference
-# Score of 0.78
-# AUC of 0.86
+# Score of 0.92
+# AUC of 0.92
 
 # save the model
-filename = 'logisticRegr.sav'
-pickle.dump(logisticRegr, open(filename, 'wb'))
+filename = 'knn.sav'
+pickle.dump(kNearest, open(filename, 'wb'))
