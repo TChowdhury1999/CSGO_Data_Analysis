@@ -30,15 +30,15 @@ x_train, x_test, y_train, y_test = train_test_split(data.drop('Target', axis=1),
 # Make an instance of KNN model and
 # define parameters
 xgbTree = xgb.XGBClassifier(tree_method="hist")
-n_estimators = [10, 100, 1000]
-learning_rate = [0.001, 0.01, 0.1]
-subsample = [0.5, 0.7, 1.0]
-max_depth = [3, 7, 9]
+n_estimators = [1000]
+learning_rate = [0.1]
+subsample = [1.0]
+max_depth = [9]
 
 
 # define grid search
 grid = dict(learning_rate=learning_rate, n_estimators=n_estimators, subsample=subsample, max_depth=max_depth)
-cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+cv = RepeatedStratifiedKFold(n_splits=1, n_repeats=1, random_state=1)
 grid_search = GridSearchCV(estimator=xgbTree, param_grid=grid, n_jobs=-1, cv=cv, scoring='accuracy',error_score=0,verbose=10)
 grid_result = grid_search.fit(x_train, y_train)
 
@@ -51,7 +51,7 @@ for mean, stdev, param in zip(means, stds, params):
     print("%f (%f) with: %r" % (mean, stdev, param))
     
 # best results were
-# Best: 0.773150 using {'metric': 'manhattan', 'n_neighbors': 1, 'weights': 'uniform'}
+# Best: 0.878431 using {'learning_rate': 0.1, 'max_depth': 9, 'n_estimators': 1000, 'subsample': 1.0}
 
 # now train model with best params
 xgbTree = xgb.XGBClassifier(**grid_result.best_params_)
@@ -70,8 +70,8 @@ print(cm)
 buildROC(y_test, y_pred = y_prob[:,1])
 
 # for reference
-# Score of 0.92
-# AUC of 0.92
+# Score of 0.88
+# AUC of 0.95
 
 # save the model
 filename = 'xgbTree.sav'
