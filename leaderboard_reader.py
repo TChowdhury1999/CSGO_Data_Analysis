@@ -19,15 +19,48 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 # start by reading score info
 
-def get_score(img_path):
+def get_score(img):
     """ Function that extracts the score from screengrab image of leader board
         img_path is a str path to that img
+        output is a list with rounds won
         
         pseudo code - simply extract the colour at pixel positions near middle
         of score board
         
     """
-    pass
+    
+    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    
+    rounds=[]
+    start_x = 804
+    pixel_y = 556
+    separation_x = 20
+    first_half = 8
+    half_separation = 22
+    minimum_saturation = 30
+    minimum_value = 150
+    ct_minimum_hue, ct_maximum_hue = [99, 109]
+    t_minimum_hue, t_maximum_hue = [17, 28]
+    
+    for round_ in range(16):
+        if round_ < first_half:
+            pixel_x = start_x + round_*separation_x 
+        else:
+            pixel_x = start_x + half_separation + round_*separation_x 
+        
+        hue, saturation, value = hsv_img[pixel_y, pixel_x]
+        
+        if (saturation>minimum_saturation) and (value>minimum_value):
+            
+            if ct_minimum_hue <= hue <= ct_maximum_hue:
+                rounds.append("ct")
+            elif t_minimum_hue <= hue <= t_maximum_hue:
+                rounds.append("t")
+    
+    return rounds
+        
+        
+        
 
 def show_img(img):
     cv2.imshow('ImageWindow', img)

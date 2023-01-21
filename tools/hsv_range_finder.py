@@ -7,6 +7,7 @@ All credit to nathancy on https://stackoverflow.com/questions/57469394/opencv-ch
 
 import cv2
 import numpy as np
+import git
 
 def nothing(x):
     pass
@@ -32,7 +33,8 @@ hMin = sMin = vMin = hMax = sMax = vMax = 0
 phMin = psMin = pvMin = phMax = psMax = pvMax = 0
 
 #img = cv2.imread('digit_images/4_CT.png')
-img = cv2.imread('leaderboard_sample_images/test1.png')
+repo = git.Repo(".", search_parent_directories=True)
+img = cv2.imread(repo.working_tree_dir + '/images/leaderboard_sample_images/test6.png')
 output = img
 waitTime = 33
 
