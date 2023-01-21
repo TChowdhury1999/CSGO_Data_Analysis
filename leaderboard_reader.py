@@ -19,18 +19,12 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 # start by reading score info
 
-def get_score(img):
+def get_score(hsv_img):
     """ Function that extracts the score from screengrab image of leader board
-        img_path is a str path to that img
         output is a list with rounds won
-        
-        pseudo code - simply extract the colour at pixel positions near middle
-        of score board
-        
     """
     
-    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    
+
     rounds=[]
     start_x = 804
     pixel_y = 556
@@ -58,28 +52,24 @@ def get_score(img):
                 rounds.append("t")
     
     return rounds
-        
-        
+
         
 
 def show_img(img):
     cv2.imshow('ImageWindow', img)
     cv2.waitKey(0)
 
-def get_time(img_path):
+def get_time(hsv_img):
     """
     Retrieves time from image - if no time found then returns a tuple 
     (None, Est_time) where Est_time is a guessed time based on number of kills
     in the round so far
     """
     
-    # read in image
-    img = cv2.imread(img_path)
     # convert image to HSV
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     lower = np.array([13,20,36])
     upper = np.array([17,117,192])
-    img = cv2.inRange(hsv, lower, upper)
+    img = cv2.inRange(hsv_img, lower, upper)
     cropped_img = img[279:294, 1382:1421]
     larger_img = cv2.resize(cropped_img, (0,0), fx=3, fy=3, interpolation = cv2.INTER_NEAREST)
     invert_img = cv2.bitwise_not(larger_img)
@@ -87,7 +77,7 @@ def get_time(img_path):
     
     return out_below
 
-def get_k_d_a(img_path):
+def get_k_d_a(img):
     """
     Get kills, deaths and assists from img at img path
     
@@ -97,11 +87,6 @@ def get_k_d_a(img_path):
     comparison_array = np.load("images/digit_images/digit_arrays/comparison_array.npy")
     # create inverse comparison array where there is 0 instead of -1
     inverse_comparison_array = np.where(comparison_array == -1, 0, comparison_array)
-    
-    # img_path = "digit_images/3_CT.png"
-    
-    # read in image
-    img = cv2.imread(img_path)
     
     
     # initialise dataframes for both teams to store the info
@@ -172,3 +157,19 @@ def get_k_d_a(img_path):
             
     return player_df
 
+
+def create_input(img_path):
+    """
+    Provide the path to an image of the leaderboard and this function outputs
+    the as a dataframe the input for the ML model.
+    It has the same columns as the feature_df used to train the ML model
+    """
+    
+    # read in the image
+    img = cv2.imread(img_path)
+    
+    # some functions require hsv image. To avoid multiple conversions, lets
+    # just convert to hsv once here
+    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    
+    pass
