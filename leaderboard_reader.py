@@ -157,7 +157,58 @@ def get_k_d_a(img):
             
     return player_df
 
-
+def get_player_alive(img):
+    """ 
+    Returns a list that indicates which players are dead or alive
+    """
+    
+    # initialise by reading in skull array used to compare to check if player
+    # is dead
+    skull_array = np.load("images/image_templates/skull_array.npy")
+    # create inverse skull_array also
+    inverse_skull_array = np.where(skull_array == -1, 0, skull_array)
+    
+    # list that will contain alive (1) or dead (0) for each player
+    alive_list = []
+    
+    # size and position of arrays
+    start_x = 592
+    len_x = 20
+    
+    ct_start_y = 377
+    t_start_y = 611
+    sep_y = 26
+    len_y = 22
+    
+    for team in range(2):
+        for player in range(5):
+            
+            # calculate coordinates
+            cell_y = ct_start_y*(1-team) + t_start_y*team + player*sep_y
+            
+            # reduce image to this cell
+            cell_img = img[cell_y:cell_y+len_y, start_x:start_x+len_x]
+            
+            # perform otsu thresholding to only extract a solid background with
+            # skull image on top (or no image)
+            # convert to greyscale
+            cell_img = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
+            # apply binary otsu threshold
+            _, cell_array = cv2.threshold(cell_img,0,1,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+            
+            # create inverse cell array which has -1 instead of 0
+            inverse_cell_array = np.where(cell_array == 0, -1, cell_array)           
+            
+            weight = (cell_array*skull_array).sum() + (inverse_cell_array*inverse_skull_array).sum()
+            
+            # weight above 300 indicates dead
+            alive_list.append(weight<300)
+            
+    return alive_list
+            
+    
+    
+    
 def create_input(img_path):
     """
     Provide the path to an image of the leaderboard and this function outputs
