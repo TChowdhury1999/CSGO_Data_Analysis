@@ -92,7 +92,7 @@ def get_k_d_a(img):
     inverse_comparison_array = np.where(comparison_array == -1, 0, comparison_array)
 
     # initialise dataframes for both teams to store the info
-    player_df = pd.DataFrame([[0, 0, 0] for i in range(1, 11)], columns=["Kills", "Assists", "Deaths"])
+    player_df = pd.DataFrame([[0, 0, 0] for i in range(1, 11)], columns=["kills", "assists", "deaths"])
 
     ct_start_x = 1224
     ct_start_y = 377
@@ -205,7 +205,7 @@ def get_player_alive(img):
             # weight above 300 indicates dead
             alive_list.append(weight < 300)
 
-    return alive_list
+    return np.array(alive_list).astype(int)
 
 
 def create_input(img_path):
@@ -221,5 +221,46 @@ def create_input(img_path):
     # some functions require hsv image. To avoid multiple conversions, lets
     # just convert to hsv once here
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-    pass
+    
+    # initialise an empty dataframe here
+    # this has the same info as the dataframe we would read during data 
+    # collection
+    # using a dataframe just so we can reuse the code from feature_engineering
+    # to recreate the features from this data
+    
+    read_df = pd.DataFrame(np.zeros((1,44)),columns = ['Round', 'Time', 'team1_score', 'team2_score', 'player1_alive',
+           'player1_kills', 'player1_assists', 'player1_deaths', 'player2_alive',
+           'player2_kills', 'player2_assists', 'player2_deaths', 'player3_alive',
+           'player3_kills', 'player3_assists', 'player3_deaths', 'player4_alive',
+           'player4_kills', 'player4_assists', 'player4_deaths', 'player5_alive',
+           'player5_kills', 'player5_assists', 'player5_deaths', 'player6_alive',
+           'player6_kills', 'player6_assists', 'player6_deaths', 'player7_alive',
+           'player7_kills', 'player7_assists', 'player7_deaths', 'player8_alive',
+           'player8_kills', 'player8_assists', 'player8_deaths', 'player9_alive',
+           'player9_kills', 'player9_assists', 'player9_deaths', 'player10_alive',
+           'player10_kills', 'player10_assists', 'player10_deaths'])
+    
+    # start with round & scores
+    rounds = get_score(hsv_img)
+    
+    # team1 is t side
+    read_df.loc[0, "team1_score"] = rounds.count('t')
+    read_df.loc[0, "team2_score"] = rounds.count('ct')
+    read_df.loc[0, "Round"] = len(rounds)+1
+    
+    # get k_d_a
+    k_d_a = get_k_d_a(img)
+    
+    for player in range(10):
+        for stat in ["kills", "assists", "deaths"]:
+            read_df.loc[0, f"player{player+1}_{stat}"] = k_d_a[f"{stat}"][player]
+    
+    # get player alive
+    alive_list = get_player_alive(img)
+    
+    for player in range(10):
+        read_df.loc[0, f"player{player+1}_alive"] = alive_list[player]
+    
+    # now begin creating input dataframe for ML model
+    
+    
