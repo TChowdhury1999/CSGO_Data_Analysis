@@ -147,6 +147,22 @@ for metric in ["k", "d", "a"]:
 # add a pistol round marker
 features_df["pistol_round"] = [1 if ((i == 1) or (i == 9)) else 0 for i in features_df.Round]
 
+# add a number of alive players counter
+features_df["team1_players_alive"] = (
+    combined_df.player1_alive
+    + combined_df.player2_alive
+    + combined_df.player3_alive
+    + combined_df.player4_alive
+    + combined_df.player5_alive
+)
+features_df["team2_players_alive"] = (
+    combined_df.player6_alive
+    + combined_df.player7_alive
+    + combined_df.player8_alive
+    + combined_df.player9_alive
+    + combined_df.player10_alive
+)
+
 # add a consecutive round win/loss since pistol counter
 
 

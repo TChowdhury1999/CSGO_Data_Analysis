@@ -32,7 +32,7 @@ x_train, x_test, y_train, y_test = train_test_split(
 # Make an instance of KNN model and
 # define parameters
 kNearest = KNeighborsClassifier()
-n_neighbors = range(1, 21, 2)
+n_neighbors = range(1, 9, 2)
 weights = ["uniform", "distance"]
 metric = ["euclidean", "manhattan", "minkowski"]
 
@@ -73,8 +73,8 @@ print(cm)
 buildROC(y_test, y_pred=y_prob[:, 1])
 
 # for reference
-# Score of 0.92
-# AUC of 0.92
+# Score of 0.93
+# AUC of 0.93
 
 # save the model
 filename = "knn.sav"
