@@ -15,6 +15,7 @@ import re
 import numpy as np
 import pandas as pd
 import pytesseract
+from feature_engineering import consecutive_binary_counter
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
@@ -236,48 +237,8 @@ def create_input(img_path):
             "Round",
             "Time",
             "team1_score",
-            "team2_score",
-            "player1_alive",
-            "player1_kills",
-            "player1_assists",
-            "player1_deaths",
-            "player2_alive",
-            "player2_kills",
-            "player2_assists",
-            "player2_deaths",
-            "player3_alive",
-            "player3_kills",
-            "player3_assists",
-            "player3_deaths",
-            "player4_alive",
-            "player4_kills",
-            "player4_assists",
-            "player4_deaths",
-            "player5_alive",
-            "player5_kills",
-            "player5_assists",
-            "player5_deaths",
-            "player6_alive",
-            "player6_kills",
-            "player6_assists",
-            "player6_deaths",
-            "player7_alive",
-            "player7_kills",
-            "player7_assists",
-            "player7_deaths",
-            "player8_alive",
-            "player8_kills",
-            "player8_assists",
-            "player8_deaths",
-            "player9_alive",
-            "player9_kills",
-            "player9_assists",
-            "player9_deaths",
-            "player10_alive",
-            "player10_kills",
-            "player10_assists",
-            "player10_deaths",
-        ],
+            "team2_score"] + [f"player{i}_alive" for i in range(1,11)] + [f"player{i}_kills" for i in range(1,11)] + 
+        [f"player{i}_assists" for i in range(1,11)] + [f"player{i}_deaths" for i in range(1,11)],
     )
 
     # start with round & scores
@@ -302,31 +263,21 @@ def create_input(img_path):
         read_df.loc[0, f"player{player+1}_alive"] = alive_list[player]
 
     # now begin creating input dataframe for ML model
-
+        
+    
     time = get_time(hsv_img)
-
-    if len(time) == 0:
-        # load linear regression time model
-        model_filename = "time_estimator.sav"
-        time_linear_regressor = pickle.load(open(model_filename, "rb"))
-        time_input = read_df.drop["Time"]  # check input matches
-        time = time_linear_regressor.predict(time_input)
-    else:
-        # insert time parse from min:sec to sec
-        # assume here that its "M:SS"
-        time_list = re.findall(r"\d{2}", time)
-        time = int(time_list[0]) * 60 + int(time_list[1])
-
+    read_df["Time"] = time
+    
     # create input df that will have the features ready for the PCA model
-    input_df = read_df[["Round", "Time"]].copy()
+    input_df = read_df[["Round", "Time", "team1_score", "team2_score"]].copy()
     working_df = pd.DataFrame()
 
     for player_number in range(1, 11):
 
         # rounds
         working_df[f"player{player_number}_k_per_round"] = read_df[f"player{player_number}_kills"] / read_df["Round"]
-        read_df[f"player{player_number}_a_per_round"] = read_df[f"player{player_number}_assists"] / read_df["Round"]
-        read_df[f"player{player_number}_d_per_round"] = read_df[f"player{player_number}_deaths"] / read_df["Round"]
+        working_df[f"player{player_number}_a_per_round"] = read_df[f"player{player_number}_assists"] / read_df["Round"]
+        working_df[f"player{player_number}_d_per_round"] = read_df[f"player{player_number}_deaths"] / read_df["Round"]
 
         # winning rounds (score)
         if player_number <= 5:
@@ -400,3 +351,70 @@ def create_input(img_path):
                 .multiply(np.array(read_df[[f"player{player_number}_alive" for player_number in range(6, 11)]]))
                 .max(axis=1)
             )
+            
+    input_df["team1_players_alive"] = (
+        read_df.player1_alive
+        + read_df.player2_alive
+        + read_df.player3_alive
+        + read_df.player4_alive
+        + read_df.player5_alive
+    )
+    input_df["team2_players_alive"] = (
+        read_df.player6_alive
+        + read_df.player7_alive
+        + read_df.player8_alive
+        + read_df.player9_alive
+        + read_df.player10_alive
+    )
+            
+    # add time to the input dataframe
+    # depending on if a time is actually visible, it may have to be inferred
+    if len(time) == 0:
+        # load linear regression time model
+        model_filename = "ML_models/time_estimator.sav"
+        time_linear_regressor = pickle.load(open(model_filename, "rb"))
+        time_input = input_df[["team1_players_alive", "team2_players_alive"]]
+        time = time_linear_regressor.predict(time_input)[0]
+    else:
+        # insert time parse from min:sec to sec
+        # assume here that its "M:SS"
+        time_list = re.findall(r"\d{2}", time)
+        time = int(time_list[0]) * 60 + int(time_list[1])
+    input_df["Time"] = time
+
+    # add pistol round marker
+    input_df["pistol_round"] = [1 if ((i == 1) or (i == 9)) else 0 for i in input_df.Round]
+
+    # add score
+    rounds_ = get_score(hsv_img)
+
+    input_df["team1_score"] = rounds_.count('t')
+    input_df["team2_score"] = rounds_.count('ct')
+    
+    
+    # add consec wins 
+    # reduce score list to rounds since last pistol round
+    if input_df["Round"].item()>8:
+        # reset the score back
+        rounds_ = rounds_[8:]
+    
+    rounds_ = np.array(rounds_)
+    # find consecutive round wins for both teams
+    if len(rounds_) == 0:
+        team1_consec_wins=0
+        team2_consec_wins=0
+    elif rounds_[-1] == 't':
+        team2_consec_wins=0
+        np.place(rounds_, rounds_ == 't', 1)
+        np.place(rounds_, rounds_ == 'ct', 0)
+        team1_consec_wins=consecutive_binary_counter(rounds_.astype(int)).tail(1).item()+1
+    else:
+        team1_consec_wins=0
+        np.place(rounds_, rounds_ == 't', 0)
+        np.place(rounds_, rounds_ == 'ct', 1)
+        team2_consec_wins=consecutive_binary_counter(rounds_.astype(int)).tail(1).item()+1
+    
+    input_df['team1_consec_wins']=team1_consec_wins
+    input_df['team2_consec_wins']=team2_consec_wins
+    
+    

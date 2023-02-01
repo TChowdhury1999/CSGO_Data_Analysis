@@ -13,7 +13,6 @@ the other features as time is only known to the player sometimes (before bomb
 import pickle
 import pandas as pd
 import git
-import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 
@@ -27,6 +26,7 @@ data = pd.read_pickle(repo.working_tree_dir + "/features_dfs/features_df.pkl")
 corrmat = data.corr()
 target = data.Time
 data = data[["team1_players_alive", "team2_players_alive"]]
+
 
 # Split the data set into training and test splits (90/10 split used)
 x_train, x_test, y_train, y_test = train_test_split(
