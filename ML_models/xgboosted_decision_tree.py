@@ -32,15 +32,15 @@ x_train, x_test, y_train, y_test = train_test_split(
 # Make an instance of KNN model and
 # define parameters
 xgbTree = xgb.XGBClassifier(tree_method="hist")
-n_estimators = [1000]
+n_estimators = [5000]
 learning_rate = [0.1]
 subsample = [1.0]
-max_depth = [9]
+max_depth = [10]
 
 
 # define grid search
 grid = dict(learning_rate=learning_rate, n_estimators=n_estimators, subsample=subsample, max_depth=max_depth)
-cv = RepeatedStratifiedKFold(n_splits=1, n_repeats=1, random_state=1)
+cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=1, random_state=1)
 grid_search = GridSearchCV(
     estimator=xgbTree, param_grid=grid, n_jobs=-1, cv=cv, scoring="accuracy", error_score=0, verbose=10
 )
@@ -55,7 +55,7 @@ for mean, stdev, param in zip(means, stds, params):
     print("%f (%f) with: %r" % (mean, stdev, param))
 
 # best results were
-# Best: 0.878431 using {'learning_rate': 0.1, 'max_depth': 9, 'n_estimators': 1000, 'subsample': 1.0}
+# Best: 0.878431 using {'learning_rate': 0.1, 'max_depth': 10, 'n_estimators': 5000, 'subsample': 1.0}
 
 # now train model with best params
 xgbTree = xgb.XGBClassifier(**grid_result.best_params_)

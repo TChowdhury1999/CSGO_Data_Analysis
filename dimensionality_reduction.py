@@ -62,4 +62,4 @@ reduced_df = pd.DataFrame(reduced_arr, columns=[f"PCA_{i}" for i in range(1, X_p
 # save dataframe, scaler and PCA model
 reduced_df.to_pickle("features_dfs/reduced_df.pkl")
 pickle.dump(scaler, open("ML_models/scaler.sav", "wb"))
-pickle.dump(PCA, open("ML_models/PCA.sav", "wb"))
+pickle.dump(pca_all, open("ML_models/PCA.sav", "wb"))

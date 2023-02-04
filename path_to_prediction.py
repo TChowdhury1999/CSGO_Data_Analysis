@@ -10,6 +10,16 @@ for current round winner and probability
 
 import os
 import time
+import pickle
+import git
+import leaderboard_reader
+
+# load in ML models
+repo = git.Repo(".", search_parent_directories=True)
+scaler = pickle.load(open(repo.working_tree_dir + "/ML_models/scaler.sav", "rb"))
+PCA = pickle.load(open(repo.working_tree_dir + "/ML_models/PCA.sav", "rb"))
+xgbTree = pickle.load(open(repo.working_tree_dir + "/ML_models/xgbTree.sav", "rb"))
+
 
 def read_directory(path, time_delay = 1):
     """
@@ -20,6 +30,9 @@ def read_directory(path, time_delay = 1):
     ----------
     path : str
         The path to where the leaderboard screenshots will be saved.
+        
+    time_delay : int
+        Time between each directory check
 
     Returns
     -------
@@ -45,13 +58,48 @@ def read_directory(path, time_delay = 1):
         # if there is no new file, then wait 3 seconds before scanning again
         time.sleep(time_delay)
         
-def obtain_prediction():
+def obtain_prediction(PCA, scaler, xgbTree, image_directory_path, time_delay=1):
     """
     Runs directory reader, feeds any new image into ML model and outputs the
     predicted round winner and confidence
+    
+    Parameters
+    ----------
+    PCA : sklearn PCA model
+    
+    scaler : sklearn Standard Scaler model
+    
+    xgbTree : xgBoost decision tree model
+    
+    image_directory_path : str
+        The path to where the leaderboard screenshots will be saved.
+        
+    time_delay : int
+        Time between each directory check
 
     Returns
     -------
-    winning_
+    predicted_round_outcome : tuple
+        Tuple with first element being winning team and second element is the
+        confidence expressed as a percentage
 
     """
+    
+    # get new leaderboard image path
+    img_path = read_directory(image_directory_path, time_delay)
+    
+    # pass this path to the reader which outputs a df for the ML models
+    input_df = leaderboard_reader.create_input(img_path)
+    
+    # pass this df to the scaler and pca models for dimensionality reduction
+    scaled_df = scaler.transform(input_df)
+    reduced_df = PCA.transform(scaled_df)
+    
+    # pass this onto boosted decision tree to get output
+    tree_outcome = (xgbTree.predict(reduced_df), 
+                    xgbTree.predict_proba(reduced_df))
+    
+    predicted_round_outcome = ('t' if tree_outcome[0] else 'ct',
+                               tree_outcome[1])
+    
+    return tree_outcome
