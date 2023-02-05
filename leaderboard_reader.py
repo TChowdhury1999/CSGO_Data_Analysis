@@ -62,22 +62,20 @@ def show_img(img):
     cv2.waitKey(0)
 
 
-def get_time(hsv_img):
+def get_time(img):
     """
-    Retrieves time from image - if no time found then returns a tuple
-    (None, Est_time) where Est_time is a guessed time based on number of kills
-    in the round so far
+    Retrieves time from image 
     """
-
-    # convert image to HSV
-    lower = np.array([13, 20, 36])
-    upper = np.array([17, 117, 192])
-    img = cv2.inRange(hsv_img, lower, upper)
-    cropped_img = img[279:294, 1382:1421]
-    larger_img = cv2.resize(cropped_img, (0, 0), fx=3, fy=3, interpolation=cv2.INTER_NEAREST)
-    invert_img = cv2.bitwise_not(larger_img)
+    
+    # crop image to time region
+    time_img = img[279:294, 1382:1421]
+    # convert to grayscale
+    grey_img = cv2.cvtColor(time_img, cv2.COLOR_BGR2GRAY)
+    # apply otsu binarisation to remove background
+    _, binary_img = cv2.threshold(grey_img, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
     out_below = pytesseract.image_to_string(
-        invert_img, lang="eng", config="--psm 7 -c tessedit_char_whitelist=0123456789:"
+        binary_img, lang="eng", config="--psm 7 -c tessedit_char_whitelist=0123456789:"
     )
 
     return out_below
@@ -265,7 +263,7 @@ def create_input(img_path):
     # now begin creating input dataframe for ML model
         
     
-    time = get_time(hsv_img)
+    time = get_time(img)
     read_df["Time"] = time
     
     # create input df that will have the features ready for the PCA model
