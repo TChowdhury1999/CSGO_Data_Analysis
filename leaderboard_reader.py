@@ -15,6 +15,7 @@ import re
 import numpy as np
 import pandas as pd
 import pytesseract
+import git
 from feature_engineering import consecutive_binary_counter
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -60,6 +61,48 @@ def get_score(hsv_img):
 def show_img(img):
     cv2.imshow("ImageWindow", img)
     cv2.waitKey(0)
+
+def create_comp_array():
+    """
+    Creates comparison array for digit identification
+    """
+    
+    # path to images
+    repo = git.Repo(".", search_parent_directories=True)
+    img_path = repo.working_tree_dir + "/images/time_images/"
+    
+    # initialise the array
+    comparison_array = []
+    
+    # coordinates to get boxes
+    
+    start_x = 1411
+    start_y = 280
+   
+    len_x = 8
+    len_y = 14
+    
+    
+    
+    # load in each image
+    for img_number in range(11):
+        
+        img = cv2.imread(img_path + f"{img_number}.jpg")
+        
+        # crop image to number
+        cell_img = img[ start_y : start_y+len_y , start_x : start_x+len_x]
+        
+        # convert to greyscale
+        cell_img = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
+        
+        # apply otsu binarization
+        _, time_array = cv2.threshold(cell_img, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        
+        # flatten array and add to comparison array
+        flat_array = time_array.flatten()
+        comparison_array.append(flat_array)
+
+    np.save("images/time_images/time_arrays/time_comparison_array.npy", np.array(comparison_array))
 
 
 def get_time(img):
