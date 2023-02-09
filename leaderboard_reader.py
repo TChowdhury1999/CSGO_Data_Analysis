@@ -14,11 +14,11 @@ import pickle
 import re
 import numpy as np
 import pandas as pd
-import pytesseract
+# import pytesseract
 import git
 from feature_engineering import consecutive_binary_counter
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 
 # start by reading score info
@@ -109,19 +109,62 @@ def get_time(img):
     """
     Retrieves time from image 
     """
+    # time stored here
+    time=[]
+    # there are three digits to read in the time
+    # define the starting coordinates in a list here
     
-    # crop image to time region
-    time_img = img[279:294, 1382:1421]
-    # convert to grayscale
-    grey_img = cv2.cvtColor(time_img, cv2.COLOR_BGR2GRAY)
-    # apply otsu binarisation to remove background
-    _, binary_img = cv2.threshold(grey_img, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    start_xs = [1384,1402,1411]
+    start_y = 280
     
-    out_below = pytesseract.image_to_string(
-        binary_img, lang="eng", config="--psm 7 -c tessedit_char_whitelist=0123456789:"
-    )
+    len_x = 8
+    len_y = 14
+    
+    # load in comparison array
+    comparison_array = np.load("images/time_images/time_arrays/time_comparison_array.npy")
+    # create inverse
+    inverse_comparison_array = np.where(comparison_array == -1, 0, comparison_array)
+    
+    for digit in range(3):
+        
+        # crop image to digit region
+        digit_img = img[start_y:start_y+len_y, start_xs[digit]:start_xs[digit]+len_x]
+        # convert to grayscale
+        grey_img = cv2.cvtColor(digit_img, cv2.COLOR_BGR2GRAY)
+        # apply otsu binarisation to remove background
+        _, digit_array = cv2.threshold(grey_img, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # create inverse binary image where 0 -> -1
+        inverse_digit_array = np.where(digit_array == 0, -1, digit_array)
+        
+        # create initial weights array
+        flat_array = digit_array.flatten()
+        tile_array = np.tile(flat_array, (11, 1))
+        weight_array = comparison_array * tile_array
+        weights = weight_array.sum(axis=1)
+        
+        # create the inverse weights array
+        inverse_flat_array = inverse_digit_array.flatten()
+        inverse_tile_array = np.tile(inverse_flat_array, (11, 1))
+        inverse_weight_array = inverse_comparison_array * inverse_tile_array
+        inverse_weights = inverse_weight_array.sum(axis=1)
+        
+        # sum these weight, then the index of the max weight is the
+        # number we are looking for
+        total_weights = weights + inverse_weights
+        if digit == 0:
+            # the first digit can only be 0 or 1 so let's restrict to this
+            # (and none)
+            digit = np.append(total_weights[:2], total_weights[-1]).argmax()
+        else:
+            digit = total_weights.argmax()
+        
+        if digit == 10:
+            return None
+        else:
+            time.append(digit)
+    
+    return time[0]*60 + time[1]*10 + time[2]
 
-    return out_below
 
 
 def get_k_d_a(img):
@@ -410,17 +453,13 @@ def create_input(img_path):
             
     # add time to the input dataframe
     # depending on if a time is actually visible, it may have to be inferred
-    if len(time) == 0:
+    if time == None:
         # load linear regression time model
         model_filename = "ML_models/time_estimator.sav"
         time_linear_regressor = pickle.load(open(model_filename, "rb"))
         time_input = input_df[["team1_players_alive", "team2_players_alive"]]
         time = time_linear_regressor.predict(time_input)[0]
-    else:
-        # insert time parse from min:sec to sec
-        # assume here that its "M:SS"
-        time_list = re.findall(r"\d{2}", time)
-        time = int(time_list[0]) * 60 + int(time_list[1])
+        
     input_df["Time"] = time
 
     # add pistol round marker
