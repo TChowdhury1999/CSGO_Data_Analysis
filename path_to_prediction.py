@@ -60,7 +60,7 @@ def read_directory(path, time_delay = 1):
         # if there is no new file, then wait 3 seconds before scanning again
         time.sleep(time_delay)
         
-def obtain_prediction(PCA, scaler, xgbTree, image_directory_path, time_delay=1):
+def obtain_prediction(image_directory_path, PCA=PCA, scaler=scaler, xgbTree=xgbTree, time_delay=1):
     """
     Runs directory reader, feeds any new image into ML model and outputs the
     predicted round winner and confidence
