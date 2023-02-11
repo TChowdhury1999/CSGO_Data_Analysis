@@ -13,6 +13,8 @@ import time
 import pickle
 import git
 import leaderboard_reader
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 # load in ML models
 repo = git.Repo(".", search_parent_directories=True)
@@ -96,10 +98,8 @@ def obtain_prediction(PCA, scaler, xgbTree, image_directory_path, time_delay=1):
     reduced_df = PCA.transform(scaled_df)
     
     # pass this onto boosted decision tree to get output
-    tree_outcome = (xgbTree.predict(reduced_df), 
-                    xgbTree.predict_proba(reduced_df))
+    # this returns [P(winning team = CT), P(winning team = T)]
+    tree_outcome = xgbTree.predict_proba(reduced_df)
     
-    predicted_round_outcome = ('t' if tree_outcome[0] else 'ct',
-                               tree_outcome[1])
     
     return tree_outcome

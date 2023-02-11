@@ -36,7 +36,7 @@ phMin = psMin = pvMin = phMax = psMax = pvMax = 0
 
 # img = cv2.imread('digit_images/4_CT.png')
 repo = git.Repo(".", search_parent_directories=True)
-img = cv2.imread(repo.working_tree_dir + "/images/leaderboard_sample_images/test1.png")
+img = cv2.imread(repo.working_tree_dir + "/images/time_images/10.jpg")
 output = img
 waitTime = 33
 

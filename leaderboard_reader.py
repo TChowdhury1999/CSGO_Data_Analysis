@@ -35,7 +35,7 @@ def get_score(hsv_img):
     separation_x = 20
     first_half = 8
     half_separation = 22
-    minimum_saturation = 30
+    minimum_saturation = 17
     minimum_value = 150
     ct_minimum_hue, ct_maximum_hue = [99, 109]
     t_minimum_hue, t_maximum_hue = [17, 28]
