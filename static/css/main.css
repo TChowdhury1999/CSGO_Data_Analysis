@@ -1,0 +1,43 @@
+#bannerimage {
+  width: 100%;
+  height: 300px;
+  background-color: 141E30;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+
+body {
+  /* Old browsers */
+  background: #35577D;
+  /* Chrome 10-25, Safari 5.1-6 */
+  background: -webkit-linear-gradient(#141E30, #35577D);
+  /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  background: linear-gradient(#141E30, #35577D);
+  margin: 0;
+  padding: 0;
+  height: 1300px;
+}
+
+#header_img {
+  align: center
+}
+
+h1, h2, h3, h4 {
+  color:white;
+  font-family:Georgia;
+  text-align:center;
+}
+
+h2 {
+  font-size: 64px;
+}
+
+h3 {
+  font-style: italic;
+}
+
+a {
+  color:default;
+}
+
