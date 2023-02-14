@@ -2,17 +2,19 @@
 <html lang="en">
 <head>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-  <div id="bannerimage" style="background:url(/static/banner.jpeg) center / cover no-repeat;"></div>
   <title>CSGO Round Predictor</title>
 </head>
 
 <body>
+  <div id="bannerimage" style="background:url(/static/banner.jpeg) center / cover no-repeat;"></div>
   <h1>CSGO Round Predictor</h1>
   <br><br>
   <h4>This round's winner will be...</h4>
   <br><br>
-  <h2>(C)T</h2>
-  <h3>95% Chance</h3>
+  <div id="winner_and_probability">
+    <h2>{{ winner }}</h2>
+    <h3>{{ probability }}% Chance</h3>
+  </div>
   <br><br><br><br><br><br><br><br><br><br><br><br><br><br>
   <br><br><br><br><br><br><br><br><br><br><br><br><br><br>
 
