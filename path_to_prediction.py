@@ -84,6 +84,9 @@ def obtain_prediction(image_directory_path, PCA=PCA, scaler=scaler, xgbTree=xgbT
     predicted_round_outcome : tuple
         Tuple with first element being winning team and second element is the
         confidence expressed as a percentage
+        
+    current_round : int
+        The current round so that user knows the correct round has been measured
 
     """
     
@@ -92,6 +95,7 @@ def obtain_prediction(image_directory_path, PCA=PCA, scaler=scaler, xgbTree=xgbT
     
     # pass this path to the reader which outputs a df for the ML models
     input_df = leaderboard_reader.create_input(img_path)
+    current_round = int(input_df.Round)
     
     # pass this df to the scaler and pca models for dimensionality reduction
     scaled_df = scaler.transform(input_df)
@@ -102,4 +106,4 @@ def obtain_prediction(image_directory_path, PCA=PCA, scaler=scaler, xgbTree=xgbT
     tree_outcome = xgbTree.predict_proba(reduced_df)
     
     
-    return tree_outcome
+    return tree_outcome, current_round

@@ -3,15 +3,16 @@
 <head>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   <title>CSGO Round Predictor</title>
+  {{ turbo() }}
 </head>
 
 <body>
   <div id="bannerimage" style="background:url(/static/banner.jpeg) center / cover no-repeat;"></div>
   <h1>CSGO Round Predictor</h1>
   <br><br>
-  <h4>This round's winner will be...</h4>
-  <br><br>
   <div id="winner_and_probability">
+    <h4>Round {{ round }} winner will be...</h4>
+    <br><br>
     <h2>{{ winner }}</h2>
     <h3>{{ probability }}% Chance</h3>
   </div>
