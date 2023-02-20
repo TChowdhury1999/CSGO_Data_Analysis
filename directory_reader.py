@@ -10,7 +10,8 @@ Monitors the file path for screenshots in order to send to ML model
 import os
 import time
 
-def read_directory(path, time_delay = 1):
+
+def read_directory(path, time_delay=1):
     """
     Monitors the directory given for new files. If a new file is detected then
     the path to this file is output and the function stops.
@@ -26,27 +27,28 @@ def read_directory(path, time_delay = 1):
         The path to the latest image in the directory.
 
     """
-    
+
     # create a set to store the paths to initial files
     initial_file_set = set(os.listdir(path))
-    
+
     while True:
         # create a set of current files
         current_file_set = set(os.listdir(path))
-        
+
         # check for new files using the difference of sets
         new_file_set = current_file_set - initial_file_set
-        
+
         if len(new_file_set) != 0:
             # there is a new file so return the path to it
-            return( path + '/' + new_file_set.pop() )
-        
+            return path + "/" + new_file_set.pop()
+
         # if there is no new file, then wait 3 seconds before scanning again
         time.sleep(time_delay)
-        
+
+
 def obtain_prediction():
     """
-    
+
 
     Returns
     -------

@@ -22,16 +22,14 @@ repo = git.Repo(".", search_parent_directories=True)
 data = pd.read_pickle(repo.working_tree_dir + "/features_dfs/features_df.pkl")
 
 # remove some columns
-#data = data.drop(["match_ID", "team1_won_round", "team2_won_round"], axis=1)
+# data = data.drop(["match_ID", "team1_won_round", "team2_won_round"], axis=1)
 corrmat = data.corr()
 target = data.Time
 data = data[["team1_players_alive", "team2_players_alive"]]
 
 
 # Split the data set into training and test splits (90/10 split used)
-x_train, x_test, y_train, y_test = train_test_split(
-    data, target, test_size=0.10, random_state=0
-)
+x_train, x_test, y_train, y_test = train_test_split(data, target, test_size=0.10, random_state=0)
 
 # Make linear regression model instance
 linear_regression = LinearRegression()

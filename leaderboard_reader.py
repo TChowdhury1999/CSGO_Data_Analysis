@@ -14,6 +14,7 @@ import pickle
 import re
 import numpy as np
 import pandas as pd
+
 # import pytesseract
 import git
 from feature_engineering import consecutive_binary_counter
@@ -62,42 +63,41 @@ def show_img(img):
     cv2.imshow("ImageWindow", img)
     cv2.waitKey(0)
 
+
 def create_comp_array():
     """
     Creates comparison array for digit identification
     """
-    
+
     # path to images
     repo = git.Repo(".", search_parent_directories=True)
     img_path = repo.working_tree_dir + "/images/time_images/"
-    
+
     # initialise the array
     comparison_array = []
-    
+
     # coordinates to get boxes
-    
+
     start_x = 1411
     start_y = 280
-   
+
     len_x = 8
     len_y = 14
-    
-    
-    
+
     # load in each image
     for img_number in range(11):
-        
+
         img = cv2.imread(img_path + f"{img_number}.jpg")
-        
+
         # crop image to number
-        cell_img = img[ start_y : start_y+len_y , start_x : start_x+len_x]
-        
+        cell_img = img[start_y : start_y + len_y, start_x : start_x + len_x]
+
         # convert to greyscale
         cell_img = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
-        
+
         # apply otsu binarization
         _, time_array = cv2.threshold(cell_img, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
+
         # flatten array and add to comparison array
         flat_array = time_array.flatten()
         comparison_array.append(flat_array)
@@ -107,47 +107,47 @@ def create_comp_array():
 
 def get_time(img):
     """
-    Retrieves time from image 
+    Retrieves time from image
     """
     # time stored here
-    time=[]
+    time = []
     # there are three digits to read in the time
     # define the starting coordinates in a list here
-    
-    start_xs = [1384,1402,1411]
+
+    start_xs = [1384, 1402, 1411]
     start_y = 280
-    
+
     len_x = 8
     len_y = 14
-    
+
     # load in comparison array
     comparison_array = np.load("images/time_images/time_arrays/time_comparison_array.npy")
     # create inverse
     inverse_comparison_array = np.where(comparison_array == -1, 0, comparison_array)
-    
+
     for digit in range(3):
-        
+
         # crop image to digit region
-        digit_img = img[start_y:start_y+len_y, start_xs[digit]:start_xs[digit]+len_x]
+        digit_img = img[start_y : start_y + len_y, start_xs[digit] : start_xs[digit] + len_x]
         # convert to grayscale
         grey_img = cv2.cvtColor(digit_img, cv2.COLOR_BGR2GRAY)
         # apply otsu binarisation to remove background
         _, digit_array = cv2.threshold(grey_img, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         # create inverse binary image where 0 -> -1
         inverse_digit_array = np.where(digit_array == 0, -1, digit_array)
-        
+
         # create initial weights array
         flat_array = digit_array.flatten()
         tile_array = np.tile(flat_array, (11, 1))
         weight_array = comparison_array * tile_array
         weights = weight_array.sum(axis=1)
-        
+
         # create the inverse weights array
         inverse_flat_array = inverse_digit_array.flatten()
         inverse_tile_array = np.tile(inverse_flat_array, (11, 1))
         inverse_weight_array = inverse_comparison_array * inverse_tile_array
         inverse_weights = inverse_weight_array.sum(axis=1)
-        
+
         # sum these weight, then the index of the max weight is the
         # number we are looking for
         total_weights = weights + inverse_weights
@@ -157,14 +157,13 @@ def get_time(img):
             digit = np.append(total_weights[:2], total_weights[-1]).argmax()
         else:
             digit = total_weights.argmax()
-        
+
         if digit == 10:
             return None
         else:
             time.append(digit)
-    
-    return time[0]*60 + time[1]*10 + time[2]
 
+    return time[0] * 60 + time[1] * 10 + time[2]
 
 
 def get_k_d_a(img):
@@ -317,12 +316,11 @@ def create_input(img_path):
 
     read_df = pd.DataFrame(
         np.zeros((1, 44)),
-        columns=[
-            "Round",
-            "Time",
-            "team1_score",
-            "team2_score"] + [f"player{i}_alive" for i in range(1,11)] + [f"player{i}_kills" for i in range(1,11)] + 
-        [f"player{i}_assists" for i in range(1,11)] + [f"player{i}_deaths" for i in range(1,11)],
+        columns=["Round", "Time", "team1_score", "team2_score"]
+        + [f"player{i}_alive" for i in range(1, 11)]
+        + [f"player{i}_kills" for i in range(1, 11)]
+        + [f"player{i}_assists" for i in range(1, 11)]
+        + [f"player{i}_deaths" for i in range(1, 11)],
     )
 
     # start with round & scores
@@ -347,11 +345,10 @@ def create_input(img_path):
         read_df.loc[0, f"player{player+1}_alive"] = alive_list[player]
 
     # now begin creating input dataframe for ML model
-        
-    
+
     time = get_time(img)
     read_df["Time"] = time
-    
+
     # create input df that will have the features ready for the PCA model
     input_df = read_df[["Round", "Time", "team1_score", "team2_score"]].copy()
     working_df = pd.DataFrame()
@@ -435,7 +432,7 @@ def create_input(img_path):
                 .multiply(np.array(read_df[[f"player{player_number}_alive" for player_number in range(6, 11)]]))
                 .max(axis=1)
             )
-            
+
     input_df["team1_players_alive"] = (
         read_df.player1_alive
         + read_df.player2_alive
@@ -450,7 +447,7 @@ def create_input(img_path):
         + read_df.player9_alive
         + read_df.player10_alive
     )
-            
+
     # add time to the input dataframe
     # depending on if a time is actually visible, it may have to be inferred
     if time == None:
@@ -459,7 +456,7 @@ def create_input(img_path):
         time_linear_regressor = pickle.load(open(model_filename, "rb"))
         time_input = input_df[["team1_players_alive", "team2_players_alive"]]
         time = time_linear_regressor.predict(time_input)[0]
-        
+
     input_df["Time"] = time
 
     # add pistol round marker
@@ -468,33 +465,32 @@ def create_input(img_path):
     # add score
     rounds_ = get_score(hsv_img)
 
-    input_df["team1_score"] = rounds_.count('t')
-    input_df["team2_score"] = rounds_.count('ct')
-    
-    
-    # add consec wins 
+    input_df["team1_score"] = rounds_.count("t")
+    input_df["team2_score"] = rounds_.count("ct")
+
+    # add consec wins
     # reduce score list to rounds since last pistol round
-    if input_df["Round"].item()>8:
+    if input_df["Round"].item() > 8:
         # reset the score back
         rounds_ = rounds_[8:]
-    
+
     rounds_ = np.array(rounds_)
     # find consecutive round wins for both teams
     if len(rounds_) == 0:
-        team1_consec_wins=0
-        team2_consec_wins=0
-    elif rounds_[-1] == 't':
-        team2_consec_wins=0
-        np.place(rounds_, rounds_ == 't', 1)
-        np.place(rounds_, rounds_ == 'ct', 0)
-        team1_consec_wins=consecutive_binary_counter(rounds_.astype(int)).tail(1).item()+1
+        team1_consec_wins = 0
+        team2_consec_wins = 0
+    elif rounds_[-1] == "t":
+        team2_consec_wins = 0
+        np.place(rounds_, rounds_ == "t", 1)
+        np.place(rounds_, rounds_ == "ct", 0)
+        team1_consec_wins = consecutive_binary_counter(rounds_.astype(int)).tail(1).item() + 1
     else:
-        team1_consec_wins=0
-        np.place(rounds_, rounds_ == 't', 0)
-        np.place(rounds_, rounds_ == 'ct', 1)
-        team2_consec_wins=consecutive_binary_counter(rounds_.astype(int)).tail(1).item()+1
-    
-    input_df['team1_consec_wins']=team1_consec_wins
-    input_df['team2_consec_wins']=team2_consec_wins
-    
-    return(input_df)
+        team1_consec_wins = 0
+        np.place(rounds_, rounds_ == "t", 0)
+        np.place(rounds_, rounds_ == "ct", 1)
+        team2_consec_wins = consecutive_binary_counter(rounds_.astype(int)).tail(1).item() + 1
+
+    input_df["team1_consec_wins"] = team1_consec_wins
+    input_df["team2_consec_wins"] = team2_consec_wins
+
+    return input_df
