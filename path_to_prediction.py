@@ -9,12 +9,10 @@ for current round winner and probability
 """
 
 import os
-import time
 import pickle
 import git
 import leaderboard_reader
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
+import glob
 
 # load in ML models
 repo = git.Repo(".", search_parent_directories=True)
@@ -23,47 +21,35 @@ PCA = pickle.load(open(repo.working_tree_dir + "/ML_models/PCA.sav", "rb"))
 xgbTree = pickle.load(open(repo.working_tree_dir + "/ML_models/xgbTree.sav", "rb"))
 
 
-def read_directory(path, time_delay = 1):
+def get_latest_file(path):
     """
-    Monitors the directory given for new files. If a new file is detected then
-    the path to this file is output and the function stops.
+    Returns the file path of the latest file in the directory passed
 
     Parameters
     ----------
     path : str
-        The path to where the leaderboard screenshots will be saved.
+        The path to the directory to be checked
         
-    time_delay : int
-        Time between each directory check
 
     Returns
     -------
-    img_path : str
-        The path to the latest image in the directory.
+    latest_path : str
+        The path to the latest file in the directory.
 
     """
     
-    # create a set to store the paths to initial files
-    initial_file_set = set(os.listdir(path))
+    # obtain all files in path
+    list_of_files = glob.glob(f'{path}/*')
     
-    while True:
-        # create a set of current files
-        current_file_set = set(os.listdir(path))
+    # latest file has maximum of creation time
+    latest_file = max(list_of_files, key=os.path.getctime)
+    
+    return latest_file
         
-        # check for new files using the difference of sets
-        new_file_set = current_file_set - initial_file_set
-        
-        if len(new_file_set) != 0:
-            # there is a new file so return the path to it
-            return( path + '/' + new_file_set.pop() )
-        
-        # if there is no new file, then wait 3 seconds before scanning again
-        time.sleep(time_delay)
-        
-def obtain_prediction(image_directory_path, PCA=PCA, scaler=scaler, xgbTree=xgbTree, time_delay=1):
+def obtain_prediction(img_path, PCA=PCA, scaler=scaler, xgbTree=xgbTree):
     """
-    Runs directory reader, feeds any new image into ML model and outputs the
-    predicted round winner and confidence
+    Feeds image at img_path into ML model and outputs the
+    predicted round winner and confidence as probability (and round number)
     
     Parameters
     ----------
@@ -73,25 +59,16 @@ def obtain_prediction(image_directory_path, PCA=PCA, scaler=scaler, xgbTree=xgbT
     
     xgbTree : xgBoost decision tree model
     
-    image_directory_path : str
-        The path to where the leaderboard screenshots will be saved.
-        
-    time_delay : int
-        Time between each directory check
+    img_path : str
+        The path to image of leaderboard
 
     Returns
     -------
-    predicted_round_outcome : tuple
-        Tuple with first element being winning team and second element is the
-        confidence expressed as a percentage
+    tree_outcome : list
+        List where first element is probability of CT winning, second is prob
+        of T winning and final element is round number
         
-    current_round : int
-        The current round so that user knows the correct round has been measured
-
     """
-    
-    # get new leaderboard image path
-    img_path = read_directory(image_directory_path, time_delay)
     
     # pass this path to the reader which outputs a df for the ML models
     input_df = leaderboard_reader.create_input(img_path)
@@ -106,4 +83,38 @@ def obtain_prediction(image_directory_path, PCA=PCA, scaler=scaler, xgbTree=xgbT
     tree_outcome = xgbTree.predict_proba(reduced_df)
     
     
-    return tree_outcome, current_round
+    return tree_outcome.tolist()[0] + [current_round]
+
+
+
+def write_prediction(result):
+    """
+    Writes ML model result to a file
+    """
+    with open('winner_cache.pickle', 'wb') as handle:
+        pickle.dump(result, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def update_prediction(image_directory_path, previous_file, latest_file, PCA, scaler, xgbTree):
+   """
+   Updates the ML model result in the text file if a new leaderboard image
+   file is found
+   """
+   
+   latest_file = get_latest_file(image_directory_path)
+   
+   if latest_file != previous_file:
+       previous_file = latest_file
+       outcome = obtain_prediction(latest_file, PCA, scaler, xgbTree)
+       write_prediction(outcome)
+       print()
+       
+   else:
+       print("No new file")
+       pass
+   
+def read_prediction():
+    with open('winner_cache.pickle', 'rb') as handle:
+        prediction = pickle.load(handle)
+        
+    return prediction
