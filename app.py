@@ -18,7 +18,7 @@ import pickle
 from turbo_flask import Turbo
 import threading
 from path_to_prediction import write_prediction, get_latest_file, obtain_prediction
-
+import webbrowser
 
 # initialise web app
 app = Flask(__name__)
@@ -111,5 +111,6 @@ def inject_winner_and_probability():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    webbrowser.open_new('http://localhost:5000')
+    app.run(host="0.0.0.0", port=5000)
     # pass
