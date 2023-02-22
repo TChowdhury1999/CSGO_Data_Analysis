@@ -22,3 +22,4 @@ PCA = pickle.load(open(repo.working_tree_dir + "/ML_models/PCA.sav", "rb"))
 xgbTree = pickle.load(open(repo.working_tree_dir + "/ML_models/xgbTree.sav", "rb"))
 
 
+xgbTree.get_booster().get_score(importance_type='gain')
