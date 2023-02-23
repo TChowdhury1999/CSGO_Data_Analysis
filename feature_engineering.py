@@ -62,7 +62,7 @@ if __name__ == "__main__":
     ].copy()
     working_df = pd.DataFrame()
 
-    # first add min/avg/max of (k/d/a) per round/winning round of total/alive players for team1/team2
+    # add min/avg/max of (k/d/a) per round/winning round of total/alive players for team1/team2
 
     # calculate and add a k/d/a per round/winning round column for each player to working df
     for player_number in range(1, 11):
@@ -151,6 +151,38 @@ if __name__ == "__main__":
                 .multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(6, 11)]]))
                 .max(axis=1)
             )
+    
+    # add total/team k/d/a 
+    for metric in ['kills', 'deaths', 'assists']:
+        
+        # team1, team2, total
+        working_df[f"team1_{metric[0]}"] = combined_df[[f"player{i}_{metric}" for i in range(1,6)]].sum(axis=1)
+        working_df[f"team2_{metric[0]}"] = combined_df[[f"player{i}_{metric}" for i in range(6,11)]].sum(axis=1)
+        working_df[f"total_{metric[0]}"] = combined_df[[f"player{i}_{metric}" for i in range(1,11)]].sum(axis=1)
+        
+        # set equal to 1 where it is 0
+        working_df[ working_df[f"team1_{metric[0]}"] ==0 ] =1
+        working_df[ working_df[f"team2_{metric[0]}"] ==0 ] =1
+        working_df[ working_df[f"total_{metric[0]}"] ==0 ] =1
+        
+        # alive players only
+        # team1, team2, total
+        working_df[f"team1_alive_{metric[0]}"] = combined_df[[f"player{i}_{metric}" for i in range(1,6)]].multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(1, 6)]])).sum(axis=1)
+        working_df[f"team2_alive_{metric[0]}"] = combined_df[[f"player{i}_{metric}" for i in range(6,11)]].multiply(np.array(combined_df[[f"player{player_number}_alive" for player_number in range(6, 11)]])).sum(axis=1)
+        
+    # add percentage of total/team k/d/a of alive players
+    
+
+    for metric in ['k', 'd', 'a']:
+            
+        # team1
+        features_df[f"team1_perc_{metric}_of_team"] = working_df[f"team1_alive_{metric}"]/working_df[f"team1_{metric}"]
+        features_df[f"team1_perc_{metric}_of_total"] = working_df[f"team1_alive_{metric}"]/working_df[f"total_{metric}"]
+
+        # team2
+        features_df[f"team2_perc_{metric}_of_team"] = working_df[f"team2_alive_{metric}"]/working_df[f"team2_{metric}"]
+        features_df[f"team2_perc_{metric}_of_total"] = working_df[f"team2_alive_{metric}"]/working_df[f"total_{metric}"]
+    
 
     # add a pistol round marker
     features_df["pistol_round"] = [1 if ((i == 1) or (i == 9)) else 0 for i in features_df.Round]
