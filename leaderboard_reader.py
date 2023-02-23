@@ -492,7 +492,7 @@ def create_input(img_path):
 
     input_df["team1_consec_wins"] = team1_consec_wins
     input_df["team2_consec_wins"] = team2_consec_wins
-    
+
     # need to change the order of columns to make sure PCA happens in correct order
 
     return input_df

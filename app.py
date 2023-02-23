@@ -111,6 +111,6 @@ def inject_winner_and_probability():
 
 
 if __name__ == "__main__":
-    webbrowser.open_new('http://localhost:5000')
+    webbrowser.open_new("http://localhost:5000")
     app.run(host="0.0.0.0", port=5000)
     # pass

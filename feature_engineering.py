@@ -170,8 +170,8 @@ if __name__ == "__main__":
         + combined_df.player9_alive
         + combined_df.player10_alive
     )
-    
-    # add surplus players 
+
+    # add surplus players
     features_df["team1_player_surplus"] = features_df["team1_players_alive"] - features_df["team2_players_alive"]
     features_df["team2_player_surplus"] = -features_df["team1_player_surplus"]
 
