@@ -471,12 +471,12 @@ def create_input(img_path):
     for metric in ['k', 'd', 'a']:
             
         # team1
-        input_df[f"team1_perc_{metric}_of_team"] = input_df[f"team1_alive_{metric}"]/input_df[f"team1_{metric}"]
-        input_df[f"team1_perc_{metric}_of_total"] = input_df[f"team1_alive_{metric}"]/input_df[f"total_{metric}"]
+        input_df[f"team1_perc_{metric}_of_team"] = working_df[f"team1_alive_{metric}"]/working_df[f"team1_{metric}"]
+        input_df[f"team1_perc_{metric}_of_total"] = working_df[f"team1_alive_{metric}"]/working_df[f"total_{metric}"]
 
         # team2
-        input_df[f"team2_perc_{metric}_of_team"] = input_df[f"team2_alive_{metric}"]/input_df[f"team2_{metric}"]
-        input_df[f"team2_perc_{metric}_of_total"] = input_df[f"team2_alive_{metric}"]/input_df[f"total_{metric}"]
+        input_df[f"team2_perc_{metric}_of_team"] = working_df[f"team2_alive_{metric}"]/working_df[f"team2_{metric}"]
+        input_df[f"team2_perc_{metric}_of_total"] = working_df[f"team2_alive_{metric}"]/working_df[f"total_{metric}"]
     
 
     # add time to the input dataframe
@@ -523,6 +523,11 @@ def create_input(img_path):
 
     input_df["team1_consec_wins"] = team1_consec_wins
     input_df["team2_consec_wins"] = team2_consec_wins
+    
+
+    # add surplus players
+    input_df["team1_player_surplus"] = input_df["team1_players_alive"] - input_df["team2_players_alive"]
+    input_df["team2_player_surplus"] = -input_df["team1_player_surplus"]
 
     # need to change the order of columns to make sure PCA happens in correct order
     # do this by first loading in the features_df

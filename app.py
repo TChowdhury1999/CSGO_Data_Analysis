@@ -19,10 +19,14 @@ from turbo_flask import Turbo
 import threading
 from path_to_prediction import write_prediction, get_latest_file, obtain_prediction
 import webbrowser
+import pandas as pd
 
 # initialise web app
 app = Flask(__name__)
 turbo = Turbo(app)
+
+# turn off pd warnings
+pd.options.mode.chained_assignment = None
 
 # load in ML models
 repo = git.Repo(".", search_parent_directories=True)
@@ -84,7 +88,6 @@ def inject_winner_and_probability():
     """
 
     update_prediction(image_directory_path, previous_file, latest_file, PCA, scaler, xgbTree)
-    print("test")
 
     dict_keys = ["round", "winner", "probability"]
     dict_output = ["...", "...", "..."]
