@@ -11,7 +11,6 @@ that is needed to feed into the ML model.
 
 import cv2
 import pickle
-import re
 import numpy as np
 import pandas as pd
 
@@ -447,6 +446,38 @@ def create_input(img_path):
         + read_df.player9_alive
         + read_df.player10_alive
     )
+    
+    # add total/team k/d/a 
+    for metric in ['kills', 'deaths', 'assists']:
+        
+        # team1, team2, total
+        working_df[f"team1_{metric[0]}"] = read_df[[f"player{i}_{metric}" for i in range(1,6)]].sum(axis=1)
+        working_df[f"team2_{metric[0]}"] = read_df[[f"player{i}_{metric}" for i in range(6,11)]].sum(axis=1)
+        working_df[f"total_{metric[0]}"] = read_df[[f"player{i}_{metric}" for i in range(1,11)]].sum(axis=1)
+        
+        # set equal to 1 where it is 0
+        working_df[ working_df[f"team1_{metric[0]}"] ==0 ] =1
+        working_df[ working_df[f"team2_{metric[0]}"] ==0 ] =1
+        working_df[ working_df[f"total_{metric[0]}"] ==0 ] =1
+        
+        # alive players only
+        # team1, team2, total
+        working_df[f"team1_alive_{metric[0]}"] = read_df[[f"player{i}_{metric}" for i in range(1,6)]].multiply(np.array(read_df[[f"player{player_number}_alive" for player_number in range(1, 6)]])).sum(axis=1)
+        working_df[f"team2_alive_{metric[0]}"] = read_df[[f"player{i}_{metric}" for i in range(6,11)]].multiply(np.array(read_df[[f"player{player_number}_alive" for player_number in range(6, 11)]])).sum(axis=1)
+        
+    # add percentage of total/team k/d/a of alive players
+    
+
+    for metric in ['k', 'd', 'a']:
+            
+        # team1
+        input_df[f"team1_perc_{metric}_of_team"] = input_df[f"team1_alive_{metric}"]/input_df[f"team1_{metric}"]
+        input_df[f"team1_perc_{metric}_of_total"] = input_df[f"team1_alive_{metric}"]/input_df[f"total_{metric}"]
+
+        # team2
+        input_df[f"team2_perc_{metric}_of_team"] = input_df[f"team2_alive_{metric}"]/input_df[f"team2_{metric}"]
+        input_df[f"team2_perc_{metric}_of_total"] = input_df[f"team2_alive_{metric}"]/input_df[f"total_{metric}"]
+    
 
     # add time to the input dataframe
     # depending on if a time is actually visible, it may have to be inferred
@@ -494,5 +525,8 @@ def create_input(img_path):
     input_df["team2_consec_wins"] = team2_consec_wins
 
     # need to change the order of columns to make sure PCA happens in correct order
+    # do this by first loading in the features_df
+    column_order = pd.read_pickle("features_dfs/features_df.pkl").drop(["match_ID", "team2_won_round", "team1_won_round"], axis=1).columns
+    input_df = input_df.reindex(columns=column_order)
 
     return input_df
