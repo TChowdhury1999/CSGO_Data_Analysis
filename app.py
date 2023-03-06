@@ -20,6 +20,10 @@ import threading
 from path_to_prediction import write_prediction, get_latest_file, obtain_prediction
 import webbrowser
 import pandas as pd
+from playsound import playsound
+import winsound
+from pathlib import Path
+
 
 # initialise web app
 app = Flask(__name__)
@@ -34,6 +38,10 @@ scaler = pickle.load(open(repo.working_tree_dir + "/ML_models/scaler.sav", "rb")
 PCA = pickle.load(open(repo.working_tree_dir + "/ML_models/PCA.sav", "rb"))
 xgbTree = pickle.load(open(repo.working_tree_dir + "/ML_models/xgbTree.sav", "rb"))
 
+# set audio paths 
+t_side_path = repo.working_tree_dir + "/sounds/t_side.mp3"
+t_side_path = Path().cwd() / (repo.working_tree_dir + "/sounds/t_side.mp3")
+ct_side_path = Path(repo.working_tree_dir + "/sounds/ct_side.mp3")
 
 # load in image directory path
 with open("path.txt", "r") as file:
@@ -81,6 +89,7 @@ def update_winner():
             turbo.push(turbo.replace(render_template("injected.html"), "winner_and_probability"))
 
 
+
 @app.context_processor
 def inject_winner_and_probability():
     """
@@ -103,10 +112,12 @@ def inject_winner_and_probability():
     if tree_outcome[0] >= tree_outcome[1]:
         dict_output[1] = "T"
         dict_output[2] = tree_outcome[0]
+        playsound(r"t_side_path")
     else:
         dict_output[1] = "CT"
         dict_output[2] = tree_outcome[1]
-
+        playsound(ct_side_path)
+        
     dict_output[0] = tree_outcome[2]
     dict_output[2] = int(dict_output[2] * 100)
 
