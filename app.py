@@ -62,15 +62,15 @@ def update_prediction(image_directory_path, PCA, scaler, xgbTree):
     latest_file = get_latest_file(image_directory_path)
 
     if latest_file != previous_file:
-        print("New file detected:", latest_file, "compared to", previous_file)
+        # print("New file detected:", latest_file, "compared to", previous_file)
         previous_file = latest_file
         outcome = obtain_prediction(latest_file, PCA, scaler, xgbTree)
         write_prediction(outcome)
-        print("New file detected:", latest_file, "compared to", previous_file)
+        # print("New file detected:", latest_file, "compared to", previous_file)
         return 1
 
     else:
-        print("No new file")
+        # print("No new file")
         return 0
 
 
