@@ -28,11 +28,14 @@ column_names = pickle.load(open(repo.working_tree_dir + "/features_dfs/features_
 
 # obtain importance of each PCA variable
 pca_importance = xgbTree.get_booster().get_score(importance_type="gain")
-pca_importance = pd.Series(pca_importance, name='pca_importance')
+pca_importance = pd.Series(pca_importance, name="pca_importance")
 
 # obtain coefficients for each PCA feature
 coefficients = PCA.components_.T
-coefficient_matrix = pd.DataFrame(coefficients, columns=[f"PCA_{i}" for i in range(1,coefficients.shape[1]+1)], index=column_names)**2
+coefficient_matrix = (
+    pd.DataFrame(coefficients, columns=[f"PCA_{i}" for i in range(1, coefficients.shape[1] + 1)], index=column_names)
+    ** 2
+)
 
 # propogate importance to the components
 importance_matrix = coefficient_matrix * pca_importance

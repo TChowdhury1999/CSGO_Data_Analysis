@@ -36,7 +36,7 @@ scaler = pickle.load(open(repo.working_tree_dir + "/ML_models/scaler.sav", "rb")
 PCA = pickle.load(open(repo.working_tree_dir + "/ML_models/PCA.sav", "rb"))
 xgbTree = pickle.load(open(repo.working_tree_dir + "/ML_models/xgbTree.sav", "rb"))
 
-# set audio paths 
+# set audio paths
 ct_path = repo.working_tree_dir + "\\sounds\\ct_side.wav"
 t_path = repo.working_tree_dir + "\\sounds\\t_side.wav"
 
@@ -55,10 +55,10 @@ def update_prediction(image_directory_path, PCA, scaler, xgbTree):
     Updates the ML model result in the text file if a new leaderboard image
     file is found
     """
-    
+
     global previous_file
     global latest_file
-    
+
     latest_file = get_latest_file(image_directory_path)
 
     if latest_file != previous_file:
@@ -67,11 +67,11 @@ def update_prediction(image_directory_path, PCA, scaler, xgbTree):
         outcome = obtain_prediction(latest_file, PCA, scaler, xgbTree)
         write_prediction(outcome)
         print("New file detected:", latest_file, "compared to", previous_file)
-        return (1)
+        return 1
 
     else:
         print("No new file")
-        return(0)
+        return 0
 
 
 @app.route("/")
@@ -89,7 +89,6 @@ def update_winner():
         while True:
             time.sleep(5)
             turbo.push(turbo.replace(render_template("injected.html"), "winner_and_probability"))
-
 
 
 @app.context_processor
@@ -121,7 +120,7 @@ def inject_winner_and_probability():
         dict_output[2] = tree_outcome[1]
         if update:
             winsound.PlaySound(ct_path, 0)
-        
+
     dict_output[0] = tree_outcome[2]
     dict_output[2] = int(dict_output[2] * 100)
 
