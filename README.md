@@ -26,4 +26,6 @@ The prediction will be displayed in the browser on the other monitor and played 
 # Requirements
 1) Windows only 
 2) Python 3.X
-3) numpy, 
+
+# Package list
+An extensive list is in requirements.txt but the main modules needed are numpy, scipy, pandas, opencv, scikit, xgboost, git, pickle, flask, turboflask
